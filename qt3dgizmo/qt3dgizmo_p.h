@@ -9,18 +9,14 @@
 #include <QList>
 
 #include <Qt3DCore/QEntity>
+#include <Qt3DRender/QObjectPicker>
 #include <Qt3DCore/QTransform>
 #include <Qt3DRender/QCamera>
+#include <Qt3DCore/QEntity>
+#include <Qt3DExtras/QPhongMaterial>
+#include <Qt3DExtras/QSphereMesh>
 
 class Qt3DGizmoPrivate : public QObject {
-
-public:
-
-enum RotationAxis {
-    X,
-    Y,
-    Z
-};
 
 public:
     Qt3DGizmoPrivate();
@@ -40,24 +36,32 @@ public:
     QSize m_windowSize;
 
     Qt3DGizmo::TranslationConstraint m_currentConstraint;
-    RotationAxis m_currentRotationAxis;
+    Qt3DGizmo::RotationConstraint m_currentRotationConstraint;
 
     QVector3D m_origin;
     QVector3D m_destination;
 
-    TranslationHandle *m_translationHandleX;
-    QObject *m_translationHandleXCameraConnectionContext;
-    TranslationHandle *m_translationHandleY;
-    QObject *m_translationHandleYCameraConnectionContext;
-    TranslationHandle *m_translationHandleZ;
-    QObject *m_translationHandleZCameraConnectionContext;
+    // Sphere to switch modes
+    Qt3DCore::QEntity *m_sphereEntity;
+    Qt3DExtras::QPhongMaterial *m_sphereMaterial;
+    Qt3DExtras::QSphereMesh *m_sphereMesh;
+    Qt3DRender::QObjectPicker *m_sphereObjectPicker;
+    Qt3DCore::QTransform *m_sphereTransform;
 
+    TranslationHandle *m_translationHandleX;
+    TranslationHandle *m_translationHandleY;
+    TranslationHandle *m_translationHandleZ;
     QList<TranslationHandle*> m_translationHandles;
-    QList<QObject*> m_translationHandlesCameraConnectionContexts;
 
     RotationHandle *m_rotationHandleX;
     RotationHandle *m_rotationHandleY;
     RotationHandle *m_rotationHandleZ;
+    QList<RotationHandle*> m_rotationHandles;
+
+public Q_SLOTS:
+    void initializeTranslation(int x, int y, Qt3DGizmo::TranslationConstraint translationConstraint);
+    void initializeRotation(int x, int y, Qt3DGizmo::RotationConstraint translationConstraint);
+    void update(int x, int y);
 
 private:
     Qt3DGizmo *q_ptr;

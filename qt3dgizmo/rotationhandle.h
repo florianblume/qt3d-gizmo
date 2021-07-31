@@ -6,7 +6,7 @@
 #include <QObject>
 
 #include <Qt3DExtras/QTorusMesh>
-#include <Qt3DExtras/QPhongAlphaMaterial>
+#include <Qt3DExtras/QPhongMaterial>
 
 class RotationHandle : public Handle {
 
@@ -15,12 +15,9 @@ class RotationHandle : public Handle {
 public:
     RotationHandle(Qt3DCore::QNode *parent, const QVector3D &position, const QString &label, const QColor &color);
 
-Q_SIGNALS:
-    void pressed(const QVector3D &position);
-
 private:
     Qt3DExtras::QTorusMesh *m_torusMesh;
-    Qt3DExtras::QPhongAlphaMaterial *m_material;
+    Qt3DExtras::QPhongMaterial *m_material;
 };
 
 #endif // ROTATIONHANDLE_H

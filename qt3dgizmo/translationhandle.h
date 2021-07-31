@@ -26,9 +26,6 @@ public:
                       const QVector3D &position, const QString &label,
                       const QColor &color);
 
-Q_SIGNALS:
-    void pressed(const QVector3D &position);
-
 private:
     Type m_type;
     Qt3DExtras::QCylinderMesh *m_cylinderMesh;

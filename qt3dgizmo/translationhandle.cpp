@@ -14,9 +14,10 @@ TranslationHandle::TranslationHandle(Qt3DCore::QNode *parent, Type type,
     m_cylinderMesh->setRadius(0.01);
     m_cylinderMesh->setLength(1);
     m_cylinderMesh->setRings(2);
-    m_material = new Qt3DExtras::QPhongAlphaMaterial;
+    m_material = new Qt3DExtras::QPhongMaterial;
     m_material->setAmbient(color);
-    m_material->setAlpha(1.f);
+    m_material->setShininess(0.0f);
+    m_material->setShareable(true);
     Qt3DCore::QTransform *cylinderTransform = new Qt3DCore::QTransform;
     cylinderTransform->setTranslation(QVector3D(0.0f, 0.5f, 0.0f));
     cylinderEntity->addComponent(m_cylinderMesh);

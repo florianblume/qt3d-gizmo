@@ -8,7 +8,9 @@ Handle::Handle(Qt3DCore::QNode *parent, const QVector3D &position, const QString
     , m_transform(new Qt3DCore::QTransform)
     , m_picker(new Qt3DRender::QObjectPicker)
     , m_labelEntity(new Qt3DExtras::QText2DEntity)
-    , m_labelEntityTransform(new Qt3DCore::QTransform) {
+    , m_labelEntityTransform(new Qt3DCore::QTransform)
+    , m_mouseDevice(new Qt3DInput::QMouseDevice)
+    , m_mouseHandler(new Qt3DInput::QMouseHandler) {
     addComponent(m_transform);
     m_transform->setTranslation(position);
     m_labelEntity->setParent(this);
@@ -25,6 +27,12 @@ Handle::Handle(Qt3DCore::QNode *parent, const QVector3D &position, const QString
             this, &Handle::onExited);
     connect(m_picker, &Qt3DRender::QObjectPicker::pressed,
             this, &Handle::pressed);
+
+    m_mouseDevice->setParent(this);
+    m_mouseHandler->setSourceDevice(m_mouseDevice);
+    addComponent(m_mouseHandler);
+    connect(m_mouseHandler, &Qt3DInput::QMouseHandler::exited,
+            [](){qDebug() << "test";});
 }
 
 void Handle::invertTextRotation(const QMatrix4x4 &viewMatrix) {

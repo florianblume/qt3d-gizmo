@@ -10,7 +10,9 @@
 #include <Qt3DRender/QObjectPicker>
 #include <Qt3DRender/QPickEvent>
 #include <Qt3DExtras/QText2DEntity>
-#include <Qt3DExtras/QPhongAlphaMaterial>
+#include <Qt3DExtras/QPhongMaterial>
+#include <Qt3DInput/QMouseDevice>
+#include <Qt3DInput/QMouseHandler>
 
 class Handle : public Qt3DCore::QEntity {
 
@@ -46,7 +48,9 @@ protected:
     Qt3DRender::QObjectPicker *m_picker;
     Qt3DExtras::QText2DEntity *m_labelEntity;
     Qt3DCore::QTransform *m_labelEntityTransform;
-    Qt3DExtras::QPhongAlphaMaterial *m_material;
+    Qt3DExtras::QPhongMaterial *m_material;
+    Qt3DInput::QMouseDevice *m_mouseDevice;
+    Qt3DInput::QMouseHandler *m_mouseHandler;
 };
 
 #endif // HANDLE_H
