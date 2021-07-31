@@ -18,10 +18,6 @@ public:
 Q_SIGNALS:
     void pressed(const QVector3D &position);
 
-protected Q_SLOTS:
-    void onPressed(Qt3DRender::QPickEvent *event) override;
-    void onMoved(Qt3DRender::QPickEvent *event) override;
-
 private:
     Qt3DExtras::QTorusMesh *m_torusMesh;
     Qt3DExtras::QPhongAlphaMaterial *m_material;

@@ -4,11 +4,3 @@ RotationHandle::RotationHandle(Qt3DCore::QNode *parent, const QVector3D &positio
     : Handle(parent, position, label, color) {
 
 }
-
-void RotationHandle::onPressed(Qt3DRender::QPickEvent *event) {
-
-}
-
-void RotationHandle::onMoved(Qt3DRender::QPickEvent *event) {
-
-}

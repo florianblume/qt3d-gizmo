@@ -59,36 +59,3 @@ TranslationHandle::TranslationHandle(Qt3DCore::QNode *parent, Type type,
         break;
     }
 }
-
-void TranslationHandle::invertTextRotation(const QMatrix4x4 &viewMatrix) {
-    float values[9];
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            values[(i * 3) + j]  = viewMatrix.row(i)[j];
-        }
-    }
-    QMatrix3x3 rotationMatrix = QMatrix3x3(values);
-    QQuaternion rotation = QQuaternion::fromRotationMatrix(rotationMatrix);
-    m_labelEntityTransform->setRotation((rotation * m_transform->rotation()).inverted());
-}
-
-void TranslationHandle::setCamera(Qt3DRender::QCamera *camera) {
-    if (m_cameraConnectionContext) {
-        // Delete context to remove old camera connection
-        delete m_cameraConnectionContext;
-    }
-    m_cameraConnectionContext = new QObject();
-    invertTextRotation(camera->viewMatrix());
-    connect(camera, &Qt3DRender::QCamera::viewMatrixChanged,
-           m_cameraConnectionContext, [this, camera](){
-        invertTextRotation(camera->viewMatrix());
-    });
-}
-
-void TranslationHandle::onPressed(Qt3DRender::QPickEvent *event) {
-
-}
-
-void TranslationHandle::onMoved(Qt3DRender::QPickEvent *event) {
-
-}
