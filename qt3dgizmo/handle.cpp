@@ -1,7 +1,8 @@
 #include "handle.h"
 
-Handle::Handle(const QVector3D &position, const QString &label, const QColor &color)
-    : m_color(color)
+Handle::Handle(Qt3DCore::QNode *parent, const QVector3D &position, const QString &label, const QColor &color)
+    : Qt3DCore::QEntity(parent)
+    , m_color(color)
     , m_transform(new Qt3DCore::QTransform)
     , m_picker(new Qt3DRender::QObjectPicker)
     , m_labelEntity(new Qt3DExtras::QText2DEntity)

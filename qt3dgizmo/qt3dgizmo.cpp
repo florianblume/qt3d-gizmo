@@ -7,8 +7,10 @@
 #include <QOpenGLTexture>
 #include <QOpenGLFunctions>
 
+#include <Qt3DExtras/QPhongMaterial>
+
 Qt3DGizmoPrivate::Qt3DGizmoPrivate() {
-    m_translationHandleX = new TranslationHandle(TranslationHandle::Arrow, {0, 0, 0}, "test", Qt::red);
+
 }
 
 void Qt3DGizmoPrivate::generate3DRayFromScreenToInfinity(int x, int y) {
@@ -22,6 +24,15 @@ void Qt3DGizmoPrivate::createPlane(const QVector3D &position, Qt3DGizmo::Transla
 Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     : Qt3DCore::QEntity(parent)
     , d_ptr(new Qt3DGizmoPrivate) {
+    Q_D(Qt3DGizmo);
+    d->m_translationHandleX = new TranslationHandle(this, TranslationHandle::Arrow, {0, 0, 0}, "x", Qt::blue);
+    d->m_translationHandleX->transform()->setRotationZ(90);
+    d->m_translationHandles.append(d->m_translationHandleX);
+    d->m_translationHandleY = new TranslationHandle(this, TranslationHandle::Arrow, {0, 0, 0}, "y", Qt::green);
+    d->m_translationHandles.append(d->m_translationHandleY);
+    d->m_translationHandleZ = new TranslationHandle(this, TranslationHandle::Arrow, {0, 0, 0}, "z", Qt::red);
+    d->m_translationHandleZ->transform()->setRotationX(90);
+    d->m_translationHandles.append(d->m_translationHandleZ);
 
 }
 
@@ -40,14 +51,9 @@ Qt3DCore::QTransform *Qt3DGizmo::delegateTransform() {
     return d->m_delegateTransform;
 }
 
-QMatrix4x4 Qt3DGizmo::viewMatrix() {
+Qt3DRender::QCamera *Qt3DGizmo::camera() {
     Q_D(Qt3DGizmo);
-    return d->m_viewMatrix;
-}
-
-QMatrix4x4 Qt3DGizmo::projectionMatrix() {
-    Q_D(Qt3DGizmo);
-    return d->m_projectionMatrix;
+    return d->m_camera;
 }
 
 void Qt3DGizmo::setMode(Mode mode) {
@@ -90,14 +96,11 @@ void Qt3DGizmo::setDelegateTransform(Qt3DCore::QTransform *transform) {
     Q_EMIT delegateTransformChanged(transform);
 }
 
-void Qt3DGizmo::setViewMatrix(const QMatrix4x4 &viewMatrix) {
+void Qt3DGizmo::setCamera(Qt3DRender::QCamera *camera) {
     Q_D(Qt3DGizmo);
-    d->m_viewMatrix = viewMatrix;
-    Q_EMIT viewMatrixChanged(viewMatrix);
-}
-
-void Qt3DGizmo::setProjectionMatrix(const QMatrix4x4 &projectionMatrix) {
-    Q_D(Qt3DGizmo);
-    d->m_projectionMatrix = projectionMatrix;
-    Q_EMIT projectionMatrixChanged(projectionMatrix);
+    d->m_camera = camera;
+    d->m_translationHandleX->setCamera(camera);
+    d->m_translationHandleY->setCamera(camera);
+    d->m_translationHandleZ->setCamera(camera);
+    Q_EMIT cameraChanged(camera);
 }

@@ -19,7 +19,8 @@ class Handle : public Qt3DCore::QEntity {
     Q_PROPERTY(bool m_highlightOnHover READ highlightOnHover WRITE setHighlightOnHover NOTIFY highlightOnHoverChanged)
 
 public:
-    Handle(const QVector3D &position, const QString &label, const QColor &color);
+    Handle(Qt3DCore::QNode *parent, const QVector3D &position,
+           const QString &label, const QColor &color);
     QString label();
     QColor color();
     bool highlightOnHover();
@@ -29,6 +30,7 @@ public Q_SLOTS:
     void setLabel(const QString &label);
     void setColor(const QColor &color);
     void setHighlightOnHover(bool highlightOnHover);
+    virtual void invertTextRotation(const QMatrix4x4 &viewMatix) = 0;
 
 Q_SIGNALS:
     void pressed(const QVector3D &position);
