@@ -6,6 +6,9 @@
 
 #include <Qt3DCore/QTransform>
 #include <Qt3DRender/QCamera>
+#include <Qt3DRender/QRenderSurfaceSelector>
+#include <Qt3DRender/QViewport>
+#include <Qt3DRender/QCameraSelector>
 #include <Qt3DRender/QRenderSettings>
 #include <Qt3DRender/QRenderStateSet>
 #include <Qt3DRender/QLayerFilter>
@@ -39,13 +42,13 @@ int main(int argc, char *argv[]) {
     mesh2->setRadius(20);
     mesh2->setLength(20);
     Qt3DExtras::QPhongMaterial *material = new Qt3DExtras::QPhongMaterial();
-    material->setAmbient("red");
+    material->setAmbient("gray");
     Qt3DCore::QTransform *transform = new Qt3DCore::QTransform();
     Qt3DRender::QLayer *objectsLayer = new Qt3DRender::QLayer;
     objectsLayer->setRecursive(true);
     Qt3DCore::QEntity *entity = new Qt3DCore::QEntity();
     //entity->addComponent(mesh2);
-    //entity->addComponent(mesh);
+    entity->addComponent(mesh);
     entity->addComponent(material);
     entity->addComponent(transform);
     entity->addComponent(objectsLayer);
@@ -62,34 +65,33 @@ int main(int argc, char *argv[]) {
     Qt3DRender::QLayer *gizmoLayer = new Qt3DRender::QLayer;
     gizmoLayer->setRecursive(true);
     gizmo->addComponent(gizmoLayer);
-    gizmo->addComponent(objectsLayer);
 
-    Qt3DRender::QRenderStateSet *renderStateSet = new Qt3DRender::QRenderStateSet;
+    Qt3DRender::QRenderSurfaceSelector *renderSurfaceSelector = new Qt3DRender::QRenderSurfaceSelector;
+    renderSurfaceSelector->setSurface(graphicsWindow);
+    Qt3DRender::QViewport *viewport = new Qt3DRender::QViewport(renderSurfaceSelector);
+    Qt3DRender::QCameraSelector *cameraSelector = new Qt3DRender::QCameraSelector(viewport);
+    cameraSelector->setCamera(graphicsWindow->camera());
+    Qt3DRender::QRenderStateSet *renderStateSet = new Qt3DRender::QRenderStateSet(cameraSelector);
     Qt3DRender::QDepthTest *depthTest = new Qt3DRender::QDepthTest;
     depthTest->setDepthFunction(Qt3DRender::QDepthTest::LessOrEqual);
     renderStateSet->addRenderState(depthTest);
 
-    //Qt3DRender::QClearBuffers *clearBuffers = new Qt3DRender::QClearBuffers(renderStateSet);
-    //clearBuffers->setBuffers(Qt3DRender::QClearBuffers::AllBuffers);
-    //Qt3DRender::QNoDraw *noDraw = new Qt3DRender::QNoDraw(clearBuffers);
+    Qt3DRender::QClearBuffers *clearBuffers = new Qt3DRender::QClearBuffers(renderStateSet);
+    clearBuffers->setBuffers(Qt3DRender::QClearBuffers::AllBuffers);
+    clearBuffers->setClearColor("white");
+    Qt3DRender::QNoDraw *noDraw = new Qt3DRender::QNoDraw(clearBuffers);
 
-    //Qt3DRender::QLayerFilter *layerFilter1 = new Qt3DRender::QLayerFilter(renderStateSet);
-    //layerFilter1->addLayer(objectsLayer);
-    Qt3DExtras::QForwardRenderer *forwardRenderer = new Qt3DExtras::QForwardRenderer(renderStateSet);
-    forwardRenderer->setBuffersToClear(Qt3DRender::QClearBuffers::AllBuffers);
-    forwardRenderer->setCamera(graphicsWindow->camera());
-    forwardRenderer->setClearColor(Qt::white);
+    Qt3DRender::QLayerFilter *layerFilter1 = new Qt3DRender::QLayerFilter(renderStateSet);
+    layerFilter1->addLayer(objectsLayer);
 
-    /*
+    Qt3DRender::QClearBuffers *clearBuffers2 = new Qt3DRender::QClearBuffers(renderStateSet);
+    clearBuffers2->setBuffers(Qt3DRender::QClearBuffers::DepthBuffer);
+    Qt3DRender::QNoDraw *noDraw2 = new Qt3DRender::QNoDraw(clearBuffers2);
+
     Qt3DRender::QLayerFilter *layerFilter2 = new Qt3DRender::QLayerFilter(renderStateSet);
     layerFilter2->addLayer(gizmoLayer);
-    Qt3DExtras::QForwardRenderer *forwardRenderer2 = new Qt3DExtras::QForwardRenderer(layerFilter2);
-    forwardRenderer2->setBuffersToClear(Qt3DRender::QClearBuffers::DepthBuffer);
-    forwardRenderer2->setCamera(graphicsWindow->camera());
-    forwardRenderer2->setClearColor(Qt::white);
-    */
 
-    graphicsWindow->setActiveFrameGraph(renderStateSet);
+    graphicsWindow->setActiveFrameGraph(renderSurfaceSelector);
     graphicsWindow->renderSettings()->pickingSettings()->setPickMethod(Qt3DRender::QPickingSettings::TrianglePicking);
 
     QTimer animationTimer;
@@ -100,7 +102,7 @@ int main(int argc, char *argv[]) {
     animationTimer.start();
 
     graphicsWindow->setRootEntity(entity);
-    graphicsWindow->camera()->setPosition(QVector3D(-2, 3, 7));
+    graphicsWindow->camera()->setPosition(QVector3D(2, 3, 7));
     graphicsWindow->camera()->setViewCenter({0, 0, 0});
 
     graphicsWindow->show();

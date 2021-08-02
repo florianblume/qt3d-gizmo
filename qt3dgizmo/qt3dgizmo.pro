@@ -14,14 +14,16 @@ DEFINES += QT3DWIDGETLIB_LIBRARY
 DESTDIR += $$PWD/../lib
 
 SOURCES += \
+    arrowtranslationhandle.cpp \
     handle.cpp \
+    planetranslationhandle.cpp \
     qt3dgizmo.cpp \
-    rotationhandle.cpp \
-    translationhandle.cpp
+    rotationhandle.cpp
 
 HEADERS += \
+    arrowtranslationhandle.h \
     handle.h \
+    planetranslationhandle.h \
     qt3dgizmo.h \
     qt3dgizmo_p.h \
-    rotationhandle.h \
-    translationhandle.h
+    rotationhandle.h

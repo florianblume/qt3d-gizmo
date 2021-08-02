@@ -2,20 +2,15 @@
 
 #include <QtMath>
 
-Handle::Handle(Qt3DCore::QNode *parent, const QVector3D &position, const QString &label, const QColor &color)
+Handle::Handle(Qt3DCore::QNode *parent, const QVector3D &position, const QColor &color)
     : Qt3DCore::QEntity(parent)
     , m_color(color)
     , m_transform(new Qt3DCore::QTransform)
     , m_picker(new Qt3DRender::QObjectPicker)
-    , m_labelEntity(new Qt3DExtras::QText2DEntity)
-    , m_labelEntityTransform(new Qt3DCore::QTransform)
     , m_mouseDevice(new Qt3DInput::QMouseDevice)
     , m_mouseHandler(new Qt3DInput::QMouseHandler) {
     addComponent(m_transform);
     m_transform->setTranslation(position);
-    m_labelEntity->setParent(this);
-    m_labelEntity->addComponent(m_labelEntityTransform);
-    m_labelEntity->setText(label);
     m_picker->setDragEnabled(true);
     m_picker->setHoverEnabled(true);
     addComponent(m_picker);
@@ -33,18 +28,11 @@ Handle::Handle(Qt3DCore::QNode *parent, const QVector3D &position, const QString
     addComponent(m_mouseHandler);
     connect(m_mouseHandler, &Qt3DInput::QMouseHandler::exited,
             [](){qDebug() << "test";});
-}
 
-void Handle::invertTextRotation(const QMatrix4x4 &viewMatrix) {
-    float values[9];
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            values[(i * 3) + j]  = viewMatrix.row(i)[j];
-        }
-    }
-    QMatrix3x3 rotationMatrix = QMatrix3x3(values);
-    QQuaternion rotation = QQuaternion::fromRotationMatrix(rotationMatrix);
-    m_labelEntityTransform->setRotation((rotation * m_transform->rotation()).inverted());
+    // For the subclasses to add
+    m_material = new Qt3DExtras::QPhongMaterial();
+    m_material->setAmbient(color);
+    m_material->setShininess(0.0f);
 }
 
 void Handle::onMoved() {
@@ -64,21 +52,7 @@ void Handle::onExited() {
 }
 
 void Handle::setCamera(Qt3DRender::QCamera *camera) {
-    if (m_cameraConnectionContext) {
-        // Delete context to remove old camera connection
-        delete m_cameraConnectionContext;
-    }
-    m_cameraConnectionContext = new QObject();
-    invertTextRotation(camera->viewMatrix());
-    connect(camera, &Qt3DRender::QCamera::viewMatrixChanged,
-           m_cameraConnectionContext, [this, camera](){
-        invertTextRotation(camera->viewMatrix());
-    });
-}
-
-void Handle::setLabel(const QString &label) {
-    m_label = label;
-    m_labelEntity->setText(label);
+    m_camera = camera;
 }
 
 void Handle::setColor(const QColor &color) {

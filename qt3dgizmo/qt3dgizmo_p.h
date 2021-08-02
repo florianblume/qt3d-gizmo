@@ -3,7 +3,8 @@
 
 #include "qt3dgizmo.h"
 #include "rotationhandle.h"
-#include "translationhandle.h"
+#include "arrowtranslationhandle.h"
+#include "planetranslationhandle.h"
 
 #include <QVector3D>
 #include <QList>
@@ -48,10 +49,13 @@ public:
     Qt3DRender::QObjectPicker *m_sphereObjectPicker;
     Qt3DCore::QTransform *m_sphereTransform;
 
-    TranslationHandle *m_translationHandleX;
-    TranslationHandle *m_translationHandleY;
-    TranslationHandle *m_translationHandleZ;
-    QList<TranslationHandle*> m_translationHandles;
+    ArrowTranslationHandle *m_translationHandleX;
+    ArrowTranslationHandle *m_translationHandleY;
+    ArrowTranslationHandle *m_translationHandleZ;
+    PlaneTranslationHandle *m_translationHandleXY;
+    PlaneTranslationHandle *m_translationHandleYZ;
+    PlaneTranslationHandle *m_translationHandleXZ;
+    QList<ArrowTranslationHandle*> m_translationHandles;
 
     RotationHandle *m_rotationHandleX;
     RotationHandle *m_rotationHandleY;

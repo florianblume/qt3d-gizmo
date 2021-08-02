@@ -72,22 +72,30 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     d->m_sphereEntity->addComponent(d->m_sphereObjectPicker);
     d->m_sphereEntity->addComponent(d->m_sphereTransform);
 
-    d->m_translationHandleX = new TranslationHandle(this, TranslationHandle::Arrow, {0, 0, 0}, "x", Qt::blue);
-    d->m_translationHandleX->transform()->setRotationZ(90);
+    d->m_translationHandleX = new ArrowTranslationHandle(this, {0, 0, 0}, "x", Qt::blue);
+    d->m_translationHandleX->transform()->setRotationZ(-90);
     d->m_translationHandles.append(d->m_translationHandleX);
-    d->m_translationHandleY = new TranslationHandle(this, TranslationHandle::Arrow, {0, 0, 0}, "y", Qt::green);
+    d->m_translationHandleY = new ArrowTranslationHandle(this, {0, 0, 0}, "y", Qt::green);
     d->m_translationHandles.append(d->m_translationHandleY);
-    d->m_translationHandleZ = new TranslationHandle(this, TranslationHandle::Arrow, {0, 0, 0}, "z", Qt::red);
+    d->m_translationHandleZ = new ArrowTranslationHandle(this, {0, 0, 0}, "z", Qt::red);
     d->m_translationHandleZ->transform()->setRotationX(90);
+
+    d->m_translationHandleXY = new PlaneTranslationHandle(this, {0.3f, 0.3f, 0}, Qt::yellow);
+    d->m_translationHandleXY->transform()->setRotationX(90);
+    d->m_translationHandleYZ = new PlaneTranslationHandle(this, {0, 0.3f, 0.3f}, Qt::yellow);
+    d->m_translationHandleYZ->transform()->setRotationZ(90);
+    d->m_translationHandleXZ = new PlaneTranslationHandle(this, {0.3f, 0, 0.3f}, Qt::yellow);
+
     d->m_translationHandles.append({d->m_translationHandleX,
                                     d->m_translationHandleY,
                                     d->m_translationHandleZ});
 
-    d->m_rotationHandleX = new RotationHandle(this, QVector3D(0, 0, 0), "x", Qt::blue);
+    d->m_rotationHandleX = new RotationHandle(this, QVector3D(0, 0, 0), Qt::blue);
     d->m_rotationHandleX->transform()->setRotationY(90);
-    d->m_rotationHandleY = new RotationHandle(this, QVector3D(0, 0, 0), "y", Qt::green);
+    d->m_rotationHandleY = new RotationHandle(this, QVector3D(0, 0, 0), Qt::green);
     d->m_rotationHandleY->transform()->setRotationX(90);
-    d->m_rotationHandleZ = new RotationHandle(this, QVector3D(0, 0, 0), "z", Qt::red);
+    d->m_rotationHandleZ = new RotationHandle(this, QVector3D(0, 0, 0), Qt::red);
+
     d->m_rotationHandles.append({d->m_rotationHandleX,
                                  d->m_rotationHandleY,
                                  d->m_rotationHandleZ});
@@ -120,7 +128,7 @@ void Qt3DGizmo::setMode(Mode mode) {
     // Gets called externally or by clicking the sphere
     Q_D(Qt3DGizmo);
     d->m_currentMode = mode;
-    for (TranslationHandle *translationHandle : d->m_translationHandles) {
+    for (ArrowTranslationHandle *translationHandle : d->m_translationHandles) {
         translationHandle->setEnabled(mode == Translation);
     }
     for (RotationHandle *rotationHandle : d->m_rotationHandles) {

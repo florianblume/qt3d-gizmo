@@ -9,7 +9,6 @@
 #include <Qt3DRender/QCamera>
 #include <Qt3DRender/QObjectPicker>
 #include <Qt3DRender/QPickEvent>
-#include <Qt3DExtras/QText2DEntity>
 #include <Qt3DExtras/QPhongMaterial>
 #include <Qt3DInput/QMouseDevice>
 #include <Qt3DInput/QMouseHandler>
@@ -19,16 +18,13 @@ class Handle : public Qt3DCore::QEntity {
     Q_OBJECT
 
 public:
-    Handle(Qt3DCore::QNode *parent, const QVector3D &position,
-           const QString &label, const QColor &color);
+    Handle(Qt3DCore::QNode *parent, const QVector3D &position, const QColor &color);
     Qt3DCore::QTransform *transform();
 
 public Q_SLOTS:
     void setCamera(Qt3DRender::QCamera *camera);
-    void setLabel(const QString &label);
     void setColor(const QColor &color);
     void setHighlightOnHover(bool highlightOnHover);
-    void invertTextRotation(const QMatrix4x4 &viewMatix);
 
 Q_SIGNALS:
     void pressed(Qt3DRender::QPickEvent *event);
@@ -39,15 +35,12 @@ private Q_SLOTS:
     void onExited();
 
 protected:
-    QString m_label;
     QColor m_color;
+    Qt3DRender::QCamera *m_camera;
     bool m_highlightOnHover = true;
     float m_hightlightColorOffset = 150;
-    QObject *m_cameraConnectionContext = Q_NULLPTR;
     Qt3DCore::QTransform *m_transform;
     Qt3DRender::QObjectPicker *m_picker;
-    Qt3DExtras::QText2DEntity *m_labelEntity;
-    Qt3DCore::QTransform *m_labelEntityTransform;
     Qt3DExtras::QPhongMaterial *m_material;
     Qt3DInput::QMouseDevice *m_mouseDevice;
     Qt3DInput::QMouseHandler *m_mouseHandler;
