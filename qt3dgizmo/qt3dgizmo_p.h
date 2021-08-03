@@ -106,7 +106,7 @@ public:
 
     Handle::AxisConstraint m_axisConstraint;
 
-    bool m_mouseDown = false;
+    bool m_mouseDownOnHandle = false;
 
     Ray m_rayFromClickPosition;
     Plane m_translationPlane;

@@ -90,6 +90,7 @@ int main(int argc, char *argv[]) {
 
     graphicsWindow->setActiveFrameGraph(renderSurfaceSelector);
     graphicsWindow->renderSettings()->pickingSettings()->setPickMethod(Qt3DRender::QPickingSettings::TrianglePicking);
+    graphicsWindow->renderSettings()->setRenderPolicy(Qt3DRender::QRenderSettings::Always);
 
     QTimer animationTimer;
     animationTimer.setInterval(10);

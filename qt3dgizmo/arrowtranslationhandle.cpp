@@ -13,10 +13,10 @@ ArrowTranslationHandle::ArrowTranslationHandle(Qt3DCore::QNode *parent,AxisConst
     m_cylinderEntity = new Qt3DCore::QEntity(this);
     m_cylinderMesh = new Qt3DExtras::QCylinderMesh();
     m_cylinderMesh->setRadius(0.01);
-    m_cylinderMesh->setLength(1);
+    m_cylinderMesh->setLength(0.8);
     m_cylinderMesh->setRings(2);
     m_cylinderTransform = new Qt3DCore::QTransform;
-    m_cylinderTransform->setTranslation(QVector3D(0.0f, 0.5f, 0.0f));
+    m_cylinderTransform->setTranslation(QVector3D(0.0f, 0.4f, 0.0f));
     m_cylinderEntity->addComponent(m_cylinderMesh);
     m_cylinderEntity->addComponent(m_material);
     m_cylinderEntity->addComponent(m_cylinderTransform);
@@ -29,7 +29,7 @@ ArrowTranslationHandle::ArrowTranslationHandle(Qt3DCore::QNode *parent,AxisConst
     m_coneMesh->setHasBottomEndcap(true);
     m_coneMesh->setLength(0.2f);
     m_coneTransform = new Qt3DCore::QTransform;
-    m_coneTransform->setTranslation(QVector3D(0.f, 1.0f, 0.f));
+    m_coneTransform->setTranslation(QVector3D(0.f, 0.9f, 0.f));
     m_coneEntity->addComponent(m_coneMesh);
     m_coneEntity->addComponent(m_material);
     m_coneEntity->addComponent(m_coneTransform);

@@ -41,11 +41,12 @@ public:
     // TODO r3 color
     // TODO highlight color
     // TODO font
-    // TODO show axis labels
+    // TODO show translation axis labels
     // TODO label size
     // TODO set position on delegate transform
     // TODO scale with distance
     // TODO set scale
+    // TODO set allowed modes
 
     Q_ENUM(Mode)
 

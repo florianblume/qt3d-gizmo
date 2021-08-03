@@ -94,6 +94,11 @@ QVector3D Qt3DGizmoPrivate::computePlaneNormal(const Ray &ray, Handle::AxisConst
 
 void Qt3DGizmoPrivate::initialize(Qt3DRender::QPickEvent *event,
                                   Handle::AxisConstraint axisConstraint) {
+    // We set this here to true since this function is only called when
+    // a handle was pressed and we cannot set it to true in the MouseHandler
+    // since then the update function will translate whenever the mouse
+    // is pressed anywhere
+    m_mouseDownOnHandle = true;
     // TODO: Differentiate between translation and rotation
     m_axisConstraint = axisConstraint;
     m_rayFromClickPosition = generate3DRayFromScreenToInfinity(event->position().x(),
@@ -114,12 +119,14 @@ void Qt3DGizmoPrivate::update(int x, int y) {
         // Segment lies in plane
     }
 
-    m_currentTranslationPosition = applyTranslationConstraint(m_translationPlane.position,
-                                                              intersection.second,
-                                                              m_axisConstraint);
-    m_translationDisplacement = m_currentTranslationPosition - m_translationPlane.position;
-    m_delegateTransform->setTranslation(m_delegateTransform->translation() + m_translationDisplacement);
-    m_translationPlane.position = m_currentTranslationPosition;
+    if (m_currentMode == Qt3DGizmo::Translation) {
+        m_currentTranslationPosition = applyTranslationConstraint(m_translationPlane.position,
+                                                                  intersection.second,
+                                                                  m_axisConstraint);
+        m_translationDisplacement = m_currentTranslationPosition - m_translationPlane.position;
+        m_delegateTransform->setTranslation(m_delegateTransform->translation() + m_translationDisplacement);
+        m_translationPlane.position = m_currentTranslationPosition;
+    }
 }
 
 void Qt3DGizmoPrivate::removeHighlightsFromHanldes() {
@@ -132,7 +139,7 @@ void Qt3DGizmoPrivate::removeHighlightsFromHanldes() {
 }
 
 void Qt3DGizmoPrivate::onMouseRelease() {
-    m_mouseDown = false;
+    m_mouseDownOnHandle = false;
 }
 
 Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
@@ -144,18 +151,14 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     d->m_mouseHandler = new Qt3DInput::QMouseHandler;
     d->m_mouseHandler->setSourceDevice(d->m_mouseDevice);
     addComponent(d->m_mouseHandler);
-    connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::pressed,
-            this, [d](){
-        d->m_mouseDown = true;
-    });
     connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::released,
             this, [d](){
-        d->m_mouseDown = false;
+        d->m_mouseDownOnHandle = false;
         d->removeHighlightsFromHanldes();
     });
     connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::positionChanged,
             this, [d](Qt3DInput::QMouseEvent *e){
-        if (d->m_mouseDown) {
+        if (d->m_mouseDownOnHandle) {
             d->update(e->x(), e->y());
         }
     });
@@ -194,6 +197,7 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
             this, [d](){
         d->m_sphereTransform->setScale(1.0f);
     });
+
     d->m_sphereTransform = new Qt3DCore::QTransform;
     d->m_sphereEntity->addComponent(d->m_sphereMaterial);
     d->m_sphereEntity->addComponent(d->m_sphereMesh);
