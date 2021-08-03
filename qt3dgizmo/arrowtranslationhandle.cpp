@@ -39,7 +39,6 @@ ArrowTranslationHandle::ArrowTranslationHandle(Qt3DCore::QNode *parent, const QV
     m_labelEntity->setColor(color);
     m_labelEntity->setFont(QFont("Monospace", 1, 5));
     m_labelEntityTransform = new Qt3DCore::QTransform;
-    //m_labelEntityTransform->setTranslation(QVector3D(0.2f, 0, 0));
     m_labelEntity->addComponent(m_labelEntityTransform);
     m_labelEntity->setWidth(5);
     m_labelEntity->setHeight(5);

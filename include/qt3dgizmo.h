@@ -14,25 +14,6 @@ class Qt3DGizmoPrivate;
 class Qt3DGizmo : public Qt3DCore::QEntity {
 
 public:
-    enum TranslationConstraint {
-        XTrans,
-        YTrans,
-        ZTrans,
-        XYTrans,
-        XZTrans,
-        YZTrans
-    };
-
-    Q_ENUM(TranslationConstraint)
-
-    enum RotationConstraint {
-        XRot,
-        YRot,
-        ZRot
-    };
-
-    Q_ENUM(RotationConstraint)
-
     enum Mode {
         Translation,
         Rotation
@@ -44,15 +25,30 @@ public:
     Q_PROPERTY(QSize windowSize READ windowSize WRITE setWindowSize NOTIFY windowSizeChanged)
     Q_PROPERTY(Qt3DCore::QTransform* delegateTransform READ delegateTransform WRITE setDelegateTransform NOTIFY delegateTransformChanged)
     Q_PROPERTY(Qt3DRender::QCamera *camera READ camera WRITE setCamera NOTIFY cameraChanged)
+    // TODO line width
+    // TODO plane transform size
+    // TODO plane transform offset
+    // TODO arrow translation handle length
+    // TODO rotation handle diameter
+    // TODO X color
+    // TODO y color
+    // TODO z color
+    // TODO xy color
+    // TODO xz color
+    // TODO yz color
+    // TODO r1 color
+    // TODO r2 color
+    // TODO r3 color
+    // TODO highlight color
 
     Q_ENUM(Mode)
 
 public:
     explicit Qt3DGizmo(Qt3DCore::QNode *parent = nullptr);
-    Mode mode();
-    QSize windowSize();
-    Qt3DCore::QTransform *delegateTransform();
-    Qt3DRender::QCamera *camera();
+    Mode mode() const;
+    QSize windowSize() const;
+    Qt3DCore::QTransform *delegateTransform() const;
+    Qt3DRender::QCamera *camera() const;
 
 public Q_SLOTS:
     void setMode(Qt3DGizmo::Mode mode);

@@ -63,6 +63,6 @@ void Handle::setHighlightOnHover(bool highlightOnHover) {
     m_highlightOnHover = highlightOnHover;
 }
 
-Qt3DCore::QTransform *Handle::transform() {
+Qt3DCore::QTransform *Handle::transform() const {
     return m_transform;
 }

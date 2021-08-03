@@ -8,6 +8,8 @@
 
 #include <QVector3D>
 #include <QList>
+#include <QPair>
+#include <QtMath>
 
 #include <Qt3DCore/QEntity>
 #include <Qt3DRender/QObjectPicker>
@@ -16,31 +18,122 @@
 #include <Qt3DCore/QEntity>
 #include <Qt3DExtras/QPhongMaterial>
 #include <Qt3DExtras/QSphereMesh>
+#include <Qt3DRender/QViewport>
+#include <Qt3DInput/QMouseDevice>
+#include <Qt3DInput/QMouseHandler>
+
+#define EPSILON 2.5e-8
+
+class Plane {
+
+public:
+    Plane() {
+    }
+
+    Plane(const QVector3D &normal, const QVector3D &position) {
+        this->normal = normal;
+        this->position = position;
+    }
+
+    // TODO ATTENTION! This is OpenGL normal with y being up and down
+    QVector3D normal = QVector3D(0.f, 1.f, 0.f);
+    QVector3D position;
+};
+
+class Ray {
+
+public:
+    Ray() {
+    }
+
+    Ray(const QVector3D &start, const QVector3D &end)
+        : start(start), end(end) {
+    }
+
+    QPair<int, QVector3D> intersects(const Plane &plane) const {
+        int result = 0;
+
+        QVector3D intersectPoint;
+
+        QVector3D u = start - end;
+        QVector3D w = start - plane.position;
+
+        float     D = QVector3D::dotProduct(plane.normal, u);
+        float     N = -QVector3D::dotProduct(plane.normal, w);
+
+        if (qAbs(D) < EPSILON)		   // segment is parallel to plane
+        {
+            if (N == 0)                // segment lies in plane
+                result = 2;
+            else
+                result = 0;            // no intersection
+        }
+
+        float s = N / D;
+        if (s < 0 || s > 1)
+            result = 0;                 // no intersection
+
+        intersectPoint = start + u * s; // compute segment intersect point
+
+        result = 1;
+        return qMakePair(result, intersectPoint);
+    }
+
+    QVector3D start;
+    QVector3D end;
+};
 
 class Qt3DGizmoPrivate : public QObject {
+
+enum AxisConstraint {
+    XTrans,
+    YTrans,
+    ZTrans,
+    XYTrans,
+    XZTrans,
+    YZTrans
+};
+
+Q_ENUM(AxisConstraint)
 
 public:
     Qt3DGizmoPrivate();
 
     Q_DECLARE_PUBLIC(Qt3DGizmo)
 
-    void generate3DRayFromScreenToInfinity(int x, int y);
-    void createPlane(const QVector3D &position, Qt3DGizmo::TranslationConstraint translationConstraint);
+    // Not static since we need the camera matrices
+    Ray generate3DRayFromScreenToInfinity(int x, int y);
+    Plane initializeTranslationPlane(const QVector3D &position, AxisConstraint translationConstraint);
+    void setPlaneOrientation(AxisConstraint translationConstraint);
+    QVector3D applyTranslationConstraint(const QVector3D &position, const QVector3D &intersectionPosition,
+                                         AxisConstraint translationConstraint);
+    void initialize(int x, int y, const QVector3D &position, AxisConstraint axisConstraint);
+    void update(int x, int y);
 
     Qt3DGizmo::Mode m_currentMode = Qt3DGizmo::Mode::Translation;
 
-    Qt3DCore::QTransform *m_delegateTransform;
-    Qt3DCore::QTransform *m_ownTransform;
-
-    Qt3DRender::QCamera *m_camera;
-
     QSize m_windowSize;
 
-    Qt3DGizmo::TranslationConstraint m_currentConstraint;
-    Qt3DGizmo::RotationConstraint m_currentRotationConstraint;
+    AxisConstraint m_axisConstraint;
 
-    QVector3D m_origin;
-    QVector3D m_destination;
+    bool m_mouseDown = false;
+
+    Ray m_rayFromClickPosition;
+    Plane m_translationPlane;
+    QVector3D m_currentTranslationPosition;
+    QVector3D m_lastTranslationPosition;
+    QVector3D m_translationDisplacement;
+
+
+    Qt3DInput::QMouseDevice *m_mouseDevice;
+    Qt3DInput::QMouseHandler *m_mouseHandler;
+
+    Qt3DCore::QTransform *m_delegateTransform;
+    Qt3DCore::QTransform *m_ownTransform;
+    QMetaObject::Connection m_delegateTransformConnection;
+
+    Qt3DRender::QCamera *m_camera;
+    Qt3DRender::QViewport *m_viewport;
 
     // Sphere to switch modes
     Qt3DCore::QEntity *m_sphereEntity;
@@ -55,17 +148,15 @@ public:
     PlaneTranslationHandle *m_translationHandleXY;
     PlaneTranslationHandle *m_translationHandleYZ;
     PlaneTranslationHandle *m_translationHandleXZ;
-    QList<ArrowTranslationHandle*> m_translationHandles;
+    QList<Handle*> m_translationHandles;
 
     RotationHandle *m_rotationHandleX;
     RotationHandle *m_rotationHandleY;
     RotationHandle *m_rotationHandleZ;
-    QList<RotationHandle*> m_rotationHandles;
+    QList<Handle*> m_rotationHandles;
 
 public Q_SLOTS:
-    void initializeTranslation(int x, int y, Qt3DGizmo::TranslationConstraint translationConstraint);
-    void initializeRotation(int x, int y, Qt3DGizmo::RotationConstraint translationConstraint);
-    void update(int x, int y);
+    void onMouseRelease();
 
 private:
     Qt3DGizmo *q_ptr;

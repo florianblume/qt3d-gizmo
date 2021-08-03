@@ -19,7 +19,7 @@ class Handle : public Qt3DCore::QEntity {
 
 public:
     Handle(Qt3DCore::QNode *parent, const QVector3D &position, const QColor &color);
-    Qt3DCore::QTransform *transform();
+    Qt3DCore::QTransform *transform() const;
 
 public Q_SLOTS:
     void setCamera(Qt3DRender::QCamera *camera);
@@ -38,7 +38,7 @@ protected:
     QColor m_color;
     Qt3DRender::QCamera *m_camera;
     bool m_highlightOnHover = true;
-    float m_hightlightColorOffset = 150;
+    float m_hightlightColorOffset = 180;
     Qt3DCore::QTransform *m_transform;
     Qt3DRender::QObjectPicker *m_picker;
     Qt3DExtras::QPhongMaterial *m_material;

@@ -14,9 +14,11 @@ public:
     PlaneTranslationHandle(Qt3DCore::QNode *parent, const QVector3D &position, const QColor &color);
 
 private:
-    Qt3DCore::QEntity *m_planeEntity;
-    Qt3DCore::QTransform *m_planeTransform;
-    Qt3DExtras::QPlaneMesh *m_planeMesh;
+    Qt3DCore::QEntity *m_planeFrontEntity;
+    Qt3DExtras::QPlaneMesh *m_planeMeshFront;
+    Qt3DCore::QEntity *m_planeBackEntity;
+    Qt3DCore::QTransform *m_planeBackTransform;
+    Qt3DExtras::QPlaneMesh *m_planeMeshBack;
 };
 
 #endif // PLANETRANSLATIONHANDLE_H
