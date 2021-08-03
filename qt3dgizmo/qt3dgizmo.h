@@ -45,6 +45,7 @@ public:
     // TODO label size
     // TODO set position on delegate transform
     // TODO scale with distance
+    // TODO set scale
 
     Q_ENUM(Mode)
 

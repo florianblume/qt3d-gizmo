@@ -39,7 +39,14 @@ void Handle::onExited() {
 }
 
 void Handle::onPressed(Qt3DRender::QPickEvent *event) {
+    m_isDragged = true;
+    setHighlighted(true);
     Q_EMIT pressed(event, m_axisConstraint);
+}
+
+void Handle::onReleased() {
+    m_isDragged = false;
+    setHighlighted(false);
 }
 
 void Handle::setHighlighted(bool highlighted) {

@@ -45,6 +45,7 @@ private Q_SLOTS:
     void onMoved();
     void onExited();
     void onPressed(Qt3DRender::QPickEvent *event);
+    void onReleased();
 
 protected:
     void setHighlighted(bool highlighted);
