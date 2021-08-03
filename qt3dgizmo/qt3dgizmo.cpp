@@ -58,38 +58,42 @@ Plane Qt3DGizmoPrivate::initializeTranslationPlane(const QVector3D &position,
                                                    AxisConstraint axisConstraint) {
     //QMatrix4x4 modelViewMatrix = m_camera->viewMatrix() * m_delegateTransform->matrix();
 
-    m_translationPlane.position = position;
-
     AxisConstraint newTranslationConstraint = axisConstraint;
     AxisConstraint newPlaneTranslationConstraint = axisConstraint;
 
     newTranslationConstraint = axisConstraint;
     newPlaneTranslationConstraint = axisConstraint;
 
-    setPlaneOrientation(newPlaneTranslationConstraint);
     m_axisConstraint = newTranslationConstraint;
+
+    QVector3D planeNormal = computePlaneNormal(m_rayFromClickPosition, newPlaneTranslationConstraint);
+
+    return Plane(position, planeNormal);
 }
 
 // Called by initializeTranslationPlane
-void Qt3DGizmoPrivate::setPlaneOrientation(AxisConstraint axisConstraint) {
-    QVector3D normal = m_rayFromClickPosition.start - m_rayFromClickPosition.end;
+QVector3D Qt3DGizmoPrivate::computePlaneNormal(const Ray &ray, AxisConstraint axisConstraint) {
+    QVector3D normal = ray.start - ray.end;
+
     if (axisConstraint == XTrans) {
-        m_translationPlane.normal = QVector3D(0, normal.y(), normal.z());
+        normal = QVector3D(0, normal.y(), normal.z());
     } else if (axisConstraint == YTrans) {
-        m_translationPlane.normal = QVector3D(normal.x(), 0, normal.z());
+        normal = QVector3D(normal.x(), 0, normal.z());
     } else if (axisConstraint == ZTrans) {
-        m_translationPlane.normal = QVector3D(normal.x(), normal.y(), 0);
+        normal = QVector3D(normal.x(), normal.y(), 0);
     } else if (axisConstraint == XZTrans ) {
-        m_translationPlane.normal = QVector3D(0, normal.y(), 0);
+        normal = QVector3D(0, normal.y(), 0);
     } else if (axisConstraint == YZTrans) {
-        m_translationPlane.normal = QVector3D(normal.x(), 0, 0);
+        normal = QVector3D(normal.x(), 0, 0);
     } else {//if(TransformAxes == XYTRANS {
-        m_translationPlane.normal = QVector3D(0, 0, normal.z());
+        normal = QVector3D(0, 0, normal.z());
     }
+
+    return normal;
 }
 
 void Qt3DGizmoPrivate::initialize(int x, int y, const QVector3D &position,
-                                             AxisConstraint axisConstraint) {
+                                  AxisConstraint axisConstraint) {
     // TODO: Differentiate between translation and rotation
     m_axisConstraint = axisConstraint;
     m_rayFromClickPosition = generate3DRayFromScreenToInfinity(x, y);
@@ -114,8 +118,9 @@ void Qt3DGizmoPrivate::update(int x, int y) {
                                                               intersection.second,
                                                               m_axisConstraint);
     m_translationDisplacement = m_currentTranslationPosition - m_lastTranslationPosition;
-    m_delegateTransform->setTranslation(m_delegateTransform->translation() + 0.01 * m_translationDisplacement);
+    m_delegateTransform->setTranslation(m_delegateTransform->translation() + m_translationDisplacement);
     m_lastTranslationPosition = m_currentTranslationPosition;
+    m_translationPlane.position = m_currentTranslationPosition;
 }
 
 void Qt3DGizmoPrivate::onMouseRelease() {

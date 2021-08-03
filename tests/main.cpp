@@ -32,33 +32,30 @@ int main(int argc, char *argv[]) {
     QApplication a(argc, argv);
 
     Qt3DExtras::Qt3DWindow *graphicsWindow = new Qt3DExtras::Qt3DWindow();
+    Qt3DCore::QEntity *root = new Qt3DCore::QEntity();
 
+    Qt3DCore::QEntity *objectEntity = new Qt3DCore::QEntity(root);
     Qt3DExtras::QTorusMesh *mesh = new Qt3DExtras::QTorusMesh();
     mesh->setRings(100);
     mesh->setSlices(100);
     mesh->setMinorRadius(0.5);
     mesh->setRadius(1);
-    Qt3DExtras::QCylinderMesh *mesh2 = new Qt3DExtras::QCylinderMesh();
-    mesh2->setRadius(20);
-    mesh2->setLength(20);
     Qt3DExtras::QPhongMaterial *material = new Qt3DExtras::QPhongMaterial();
     material->setAmbient("gray");
     Qt3DCore::QTransform *transform = new Qt3DCore::QTransform();
     Qt3DRender::QLayer *objectsLayer = new Qt3DRender::QLayer;
     objectsLayer->setRecursive(true);
-    Qt3DCore::QEntity *entity = new Qt3DCore::QEntity();
-    //entity->addComponent(mesh2);
-    entity->addComponent(mesh);
-    entity->addComponent(material);
-    entity->addComponent(transform);
-    entity->addComponent(objectsLayer);
+    objectEntity->addComponent(mesh);
+    objectEntity->addComponent(material);
+    objectEntity->addComponent(transform);
+    objectEntity->addComponent(objectsLayer);
 
-    Qt3DExtras::QFirstPersonCameraController *cameraController = new Qt3DExtras::QFirstPersonCameraController(entity);
-    cameraController->setCamera(graphicsWindow->camera());
+    Qt3DExtras::QFirstPersonCameraController *cameraController = new Qt3DExtras::QFirstPersonCameraController(root);
+    //cameraController->setCamera(graphicsWindow->camera());
 
     graphicsWindow->camera()->setNearPlane(0.01f);
 
-    Qt3DGizmo *gizmo = new Qt3DGizmo(entity);
+    Qt3DGizmo *gizmo = new Qt3DGizmo(root);
     gizmo->setDelegateTransform(transform);
     gizmo->setWindowSize(graphicsWindow->size());
     gizmo->setCamera(graphicsWindow->camera());
@@ -97,11 +94,19 @@ int main(int argc, char *argv[]) {
     QTimer animationTimer;
     animationTimer.setInterval(10);
     QObject::connect(&animationTimer, &QTimer::timeout, [graphicsWindow, transform](){
+        if (transform->translation().x() < 10) {
+            //transform->setTranslation(transform->translation() + QVector3D(0.001, 0, 0));
+        }
 
     });
     animationTimer.start();
 
-    graphicsWindow->setRootEntity(entity);
+    QObject::connect(graphicsWindow, &Qt3DExtras::Qt3DWindow::widthChanged,
+                     gizmo, &Qt3DGizmo::setWindowWidth);
+    QObject::connect(graphicsWindow, &Qt3DExtras::Qt3DWindow::heightChanged,
+                     gizmo, &Qt3DGizmo::setWindowHeight);
+
+    graphicsWindow->setRootEntity(root);
     graphicsWindow->camera()->setPosition(QVector3D(2, 3, 7));
     graphicsWindow->camera()->setViewCenter({0, 0, 0});
 

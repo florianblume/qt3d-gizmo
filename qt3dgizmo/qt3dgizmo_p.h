@@ -104,7 +104,7 @@ public:
     // Not static since we need the camera matrices
     Ray generate3DRayFromScreenToInfinity(int x, int y);
     Plane initializeTranslationPlane(const QVector3D &position, AxisConstraint translationConstraint);
-    void setPlaneOrientation(AxisConstraint translationConstraint);
+    static QVector3D computePlaneNormal(const Ray &ray, AxisConstraint translationConstraint);
     QVector3D applyTranslationConstraint(const QVector3D &position, const QVector3D &intersectionPosition,
                                          AxisConstraint translationConstraint);
     void initialize(int x, int y, const QVector3D &position, AxisConstraint axisConstraint);
@@ -123,7 +123,6 @@ public:
     QVector3D m_currentTranslationPosition;
     QVector3D m_lastTranslationPosition;
     QVector3D m_translationDisplacement;
-
 
     Qt3DInput::QMouseDevice *m_mouseDevice;
     Qt3DInput::QMouseHandler *m_mouseHandler;
