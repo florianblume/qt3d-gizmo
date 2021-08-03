@@ -43,6 +43,8 @@ public:
     // TODO font
     // TODO show axis labels
     // TODO label size
+    // TODO set position on delegate transform
+    // TODO scale with distance
 
     Q_ENUM(Mode)
 

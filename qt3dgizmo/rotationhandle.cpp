@@ -1,7 +1,8 @@
 #include "rotationhandle.h"
 
-RotationHandle::RotationHandle(Qt3DCore::QNode *parent, const QVector3D &position, const QColor &color)
-    : Handle(parent, position, color) {
+RotationHandle::RotationHandle(Qt3DCore::QNode *parent, AxisConstraint constraint,
+                               const QVector3D &position, const QColor &color)
+    : Handle(parent, constraint, position, color) {
     Qt3DCore::QEntity *entity = new Qt3DCore::QEntity(this);
     m_torusMesh = new Qt3DExtras::QTorusMesh;
     m_torusMesh->setRadius(1.0f);

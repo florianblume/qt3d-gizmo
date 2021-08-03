@@ -34,18 +34,18 @@ Ray Qt3DGizmoPrivate::generate3DRayFromScreenToInfinity(int x, int y) {
 }
 
 QVector3D Qt3DGizmoPrivate::applyTranslationConstraint(const QVector3D &position, const QVector3D &intersectionPosition,
-                                                       AxisConstraint axisConstraint) {
+                                                       Handle::AxisConstraint axisConstraint) {
     QVector3D result = position;
 
     // Only need to apply constraints for single constraints since
     // we intersect with a plane but only want one direction
-    if(axisConstraint == XTrans) {
+    if(axisConstraint == Handle::XTrans) {
         result.setX(intersectionPosition.x());
     }
-    else if(axisConstraint == YTrans ) {
+    else if(axisConstraint == Handle::YTrans ) {
         result.setY(intersectionPosition.y());
     }
-    else if(axisConstraint == ZTrans ) {
+    else if(axisConstraint == Handle::ZTrans ) {
         result.setZ(intersectionPosition.z());
     } else {
         result = intersectionPosition;
@@ -55,11 +55,11 @@ QVector3D Qt3DGizmoPrivate::applyTranslationConstraint(const QVector3D &position
 }
 
 Plane Qt3DGizmoPrivate::initializeTranslationPlane(const QVector3D &position,
-                                                   AxisConstraint axisConstraint) {
+                                                   Handle::AxisConstraint axisConstraint) {
     //QMatrix4x4 modelViewMatrix = m_camera->viewMatrix() * m_delegateTransform->matrix();
 
-    AxisConstraint newTranslationConstraint = axisConstraint;
-    AxisConstraint newPlaneTranslationConstraint = axisConstraint;
+    Handle::AxisConstraint newTranslationConstraint = axisConstraint;
+    Handle::AxisConstraint newPlaneTranslationConstraint = axisConstraint;
 
     newTranslationConstraint = axisConstraint;
     newPlaneTranslationConstraint = axisConstraint;
@@ -72,18 +72,18 @@ Plane Qt3DGizmoPrivate::initializeTranslationPlane(const QVector3D &position,
 }
 
 // Called by initializeTranslationPlane
-QVector3D Qt3DGizmoPrivate::computePlaneNormal(const Ray &ray, AxisConstraint axisConstraint) {
+QVector3D Qt3DGizmoPrivate::computePlaneNormal(const Ray &ray, Handle::AxisConstraint axisConstraint) {
     QVector3D normal = ray.start - ray.end;
 
-    if (axisConstraint == XTrans) {
+    if (axisConstraint == Handle::XTrans) {
         normal = QVector3D(0, normal.y(), normal.z());
-    } else if (axisConstraint == YTrans) {
+    } else if (axisConstraint == Handle::YTrans) {
         normal = QVector3D(normal.x(), 0, normal.z());
-    } else if (axisConstraint == ZTrans) {
+    } else if (axisConstraint == Handle::ZTrans) {
         normal = QVector3D(normal.x(), normal.y(), 0);
-    } else if (axisConstraint == XZTrans ) {
+    } else if (axisConstraint == Handle::XZTrans ) {
         normal = QVector3D(0, normal.y(), 0);
-    } else if (axisConstraint == YZTrans) {
+    } else if (axisConstraint == Handle::YZTrans) {
         normal = QVector3D(normal.x(), 0, 0);
     } else {//if(TransformAxes == XYTRANS {
         normal = QVector3D(0, 0, normal.z());
@@ -92,13 +92,14 @@ QVector3D Qt3DGizmoPrivate::computePlaneNormal(const Ray &ray, AxisConstraint ax
     return normal;
 }
 
-void Qt3DGizmoPrivate::initialize(int x, int y, const QVector3D &position,
-                                  AxisConstraint axisConstraint) {
+void Qt3DGizmoPrivate::initialize(Qt3DRender::QPickEvent *event,
+                                  Handle::AxisConstraint axisConstraint) {
     // TODO: Differentiate between translation and rotation
     m_axisConstraint = axisConstraint;
-    m_rayFromClickPosition = generate3DRayFromScreenToInfinity(x, y);
+    m_rayFromClickPosition = generate3DRayFromScreenToInfinity(event->position().x(),
+                                                               event->position().y());
     m_translationDisplacement = QVector3D();
-    m_translationPlane = initializeTranslationPlane(position, axisConstraint);
+    m_translationPlane = initializeTranslationPlane(event->worldIntersection(), axisConstraint);
 }
 
 void Qt3DGizmoPrivate::update(int x, int y) {
@@ -121,6 +122,15 @@ void Qt3DGizmoPrivate::update(int x, int y) {
     m_translationPlane.position = m_currentTranslationPosition;
 }
 
+void Qt3DGizmoPrivate::removeHighlightsFromHanldes() {
+    for (Handle *handle : m_translationHandles) {
+        handle->setIsDragged(false);
+    }
+    for (Handle *handle : m_rotationHandles) {
+        handle->setIsDragged(false);
+    }
+}
+
 void Qt3DGizmoPrivate::onMouseRelease() {
     m_mouseDown = false;
 }
@@ -134,15 +144,24 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     d->m_mouseHandler = new Qt3DInput::QMouseHandler;
     d->m_mouseHandler->setSourceDevice(d->m_mouseDevice);
     addComponent(d->m_mouseHandler);
+    connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::pressed,
+            this, [d](){
+        d->m_mouseDown = true;
+    });
     connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::released,
             this, [d](){
         d->m_mouseDown = false;
+        d->removeHighlightsFromHanldes();
     });
     connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::positionChanged,
             this, [d](Qt3DInput::QMouseEvent *e){
         if (d->m_mouseDown) {
             d->update(e->x(), e->y());
         }
+    });
+    connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::exited,
+            this, [d](){
+        d->removeHighlightsFromHanldes();
     });
 
     d->m_ownTransform = new Qt3DCore::QTransform;
@@ -181,53 +200,34 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     d->m_sphereEntity->addComponent(d->m_sphereObjectPicker);
     d->m_sphereEntity->addComponent(d->m_sphereTransform);
 
-    d->m_translationHandleX = new ArrowTranslationHandle(this, {0, 0, 0}, "x", Qt::blue);
+    d->m_translationHandleX = new ArrowTranslationHandle(this, Handle::XTrans, {0, 0, 0}, "x", Qt::blue);
     d->m_translationHandleX->transform()->setRotationZ(-90);
     connect(d->m_translationHandleX, &Handle::pressed,
-            this, [d](Qt3DRender::QPickEvent *e){
-        d->m_mouseDown = true;
-        d->initialize(e->position().x(), e->position().y(), e->worldIntersection(), Qt3DGizmoPrivate::XTrans);
-    });
-    d->m_translationHandles.append(d->m_translationHandleX);
+            d, &Qt3DGizmoPrivate::initialize);
 
-    d->m_translationHandleY = new ArrowTranslationHandle(this, {0, 0, 0}, "y", Qt::green);
+    d->m_translationHandleY = new ArrowTranslationHandle(this, Handle::YTrans, {0, 0, 0}, "y", Qt::green);
     d->m_translationHandles.append(d->m_translationHandleY);
     connect(d->m_translationHandleY, &Handle::pressed,
-            this, [d](Qt3DRender::QPickEvent *e){
-        d->m_mouseDown = true;
-        d->initialize(e->position().x(), e->position().y(), e->localIntersection(), Qt3DGizmoPrivate::YTrans);
-    });
+            d, &Qt3DGizmoPrivate::initialize);
 
-    d->m_translationHandleZ = new ArrowTranslationHandle(this, {0, 0, 0}, "z", Qt::red);
+    d->m_translationHandleZ = new ArrowTranslationHandle(this, Handle::ZTrans, {0, 0, 0}, "z", Qt::red);
     d->m_translationHandleZ->transform()->setRotationX(90);
     connect(d->m_translationHandleZ, &Handle::pressed,
-            this, [d](Qt3DRender::QPickEvent *e){
-        d->m_mouseDown = true;
-        d->initialize(e->position().x(), e->position().y(), e->localIntersection(), Qt3DGizmoPrivate::ZTrans);
-    });
+            d, &Qt3DGizmoPrivate::initialize);
 
-    d->m_translationHandleXY = new PlaneTranslationHandle(this, {0.3f, 0.3f, 0}, Qt::yellow);
+    d->m_translationHandleXY = new PlaneTranslationHandle(this, Handle::XYTrans, {0.3f, 0.3f, 0}, Qt::yellow);
     d->m_translationHandleXY->transform()->setRotationX(90);
     connect(d->m_translationHandleXY, &Handle::pressed,
-            this, [d](Qt3DRender::QPickEvent *e){
-        d->m_mouseDown = true;
-        d->initialize(e->position().x(), e->position().y(), e->localIntersection(), Qt3DGizmoPrivate::XYTrans);
-    });
+            d, &Qt3DGizmoPrivate::initialize);
 
-    d->m_translationHandleYZ = new PlaneTranslationHandle(this, {0, 0.3f, 0.3f}, Qt::yellow);
+    d->m_translationHandleYZ = new PlaneTranslationHandle(this, Handle::YZTrans, {0, 0.3f, 0.3f}, Qt::yellow);
     d->m_translationHandleYZ->transform()->setRotationZ(90);
     connect(d->m_translationHandleYZ, &Handle::pressed,
-            this, [d](Qt3DRender::QPickEvent *e){
-        d->m_mouseDown = true;
-        d->initialize(e->position().x(), e->position().y(), e->localIntersection(), Qt3DGizmoPrivate::YZTrans);
-    });
+            d, &Qt3DGizmoPrivate::initialize);
 
-    d->m_translationHandleXZ = new PlaneTranslationHandle(this, {0.3f, 0, 0.3f}, Qt::yellow);
+    d->m_translationHandleXZ = new PlaneTranslationHandle(this, Handle::XZTrans, {0.3f, 0, 0.3f}, Qt::yellow);
     connect(d->m_translationHandleXZ, &Handle::pressed,
-            this, [d](Qt3DRender::QPickEvent *e){
-        d->m_mouseDown = true;
-        d->initialize(e->position().x(), e->position().y(), e->localIntersection(), Qt3DGizmoPrivate::XZTrans);
-    });
+            d, &Qt3DGizmoPrivate::initialize);
 
     d->m_translationHandles.append({d->m_translationHandleX,
                                     d->m_translationHandleY,
@@ -236,11 +236,11 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
                                     d->m_translationHandleYZ,
                                     d->m_translationHandleXZ});
 
-    d->m_rotationHandleX = new RotationHandle(this, QVector3D(0, 0, 0), Qt::blue);
+    d->m_rotationHandleX = new RotationHandle(this, Handle::XTrans, QVector3D(0, 0, 0), Qt::blue);
     d->m_rotationHandleX->transform()->setRotationY(90);
-    d->m_rotationHandleY = new RotationHandle(this, QVector3D(0, 0, 0), Qt::green);
+    d->m_rotationHandleY = new RotationHandle(this, Handle::YTrans, QVector3D(0, 0, 0), Qt::green);
     d->m_rotationHandleY->transform()->setRotationX(90);
-    d->m_rotationHandleZ = new RotationHandle(this, QVector3D(0, 0, 0), Qt::red);
+    d->m_rotationHandleZ = new RotationHandle(this, Handle::ZTrans, QVector3D(0, 0, 0), Qt::red);
 
     d->m_rotationHandles.append({d->m_rotationHandleX,
                                  d->m_rotationHandleY,

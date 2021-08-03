@@ -6,9 +6,9 @@
 #include <Qt3DExtras/QCylinderMesh>
 #include <Qt3DExtras/QConeMesh>
 
-ArrowTranslationHandle::ArrowTranslationHandle(Qt3DCore::QNode *parent, const QVector3D &position,
+ArrowTranslationHandle::ArrowTranslationHandle(Qt3DCore::QNode *parent,AxisConstraint constraint,  const QVector3D &position,
                                                const QString &label, const QColor &color)
-    : Handle(parent, position, color) {
+    : Handle(parent, constraint, position, color) {
 
     m_cylinderEntity = new Qt3DCore::QEntity(this);
     m_cylinderMesh = new Qt3DExtras::QCylinderMesh();

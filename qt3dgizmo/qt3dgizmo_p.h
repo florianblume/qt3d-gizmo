@@ -85,17 +85,6 @@ public:
 
 class Qt3DGizmoPrivate : public QObject {
 
-enum AxisConstraint {
-    XTrans,
-    YTrans,
-    ZTrans,
-    XYTrans,
-    XZTrans,
-    YZTrans
-};
-
-Q_ENUM(AxisConstraint)
-
 public:
     Qt3DGizmoPrivate();
 
@@ -103,18 +92,19 @@ public:
 
     // Not static since we need the camera matrices
     Ray generate3DRayFromScreenToInfinity(int x, int y);
-    Plane initializeTranslationPlane(const QVector3D &position, AxisConstraint translationConstraint);
-    static QVector3D computePlaneNormal(const Ray &ray, AxisConstraint translationConstraint);
+    Plane initializeTranslationPlane(const QVector3D &position, Handle::AxisConstraint translationConstraint);
+    static QVector3D computePlaneNormal(const Ray &ray, Handle::AxisConstraint translationConstraint);
     QVector3D applyTranslationConstraint(const QVector3D &position, const QVector3D &intersectionPosition,
-                                         AxisConstraint translationConstraint);
-    void initialize(int x, int y, const QVector3D &position, AxisConstraint axisConstraint);
+                                         Handle::AxisConstraint translationConstraint);
+    void initialize(Qt3DRender::QPickEvent *event, Handle::AxisConstraint axisConstraint);
     void update(int x, int y);
+    void removeHighlightsFromHanldes();
 
     Qt3DGizmo::Mode m_currentMode = Qt3DGizmo::Mode::Translation;
 
     QSize m_windowSize;
 
-    AxisConstraint m_axisConstraint;
+    Handle::AxisConstraint m_axisConstraint;
 
     bool m_mouseDown = false;
 

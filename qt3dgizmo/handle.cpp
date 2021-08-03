@@ -2,32 +2,23 @@
 
 #include <QtMath>
 
-Handle::Handle(Qt3DCore::QNode *parent, const QVector3D &position, const QColor &color)
+Handle::Handle(Qt3DCore::QNode *parent, AxisConstraint constraint, const QVector3D &position, const QColor &color)
     : Qt3DCore::QEntity(parent)
+    , m_axisConstraint(constraint)
     , m_color(color)
     , m_transform(new Qt3DCore::QTransform)
-    , m_picker(new Qt3DRender::QObjectPicker)
-    , m_mouseDevice(new Qt3DInput::QMouseDevice)
-    , m_mouseHandler(new Qt3DInput::QMouseHandler) {
+    , m_picker(new Qt3DRender::QObjectPicker) {
     addComponent(m_transform);
     m_transform->setTranslation(position);
     m_picker->setDragEnabled(true);
     m_picker->setHoverEnabled(true);
     addComponent(m_picker);
     connect(m_picker, &Qt3DRender::QObjectPicker::moved,
-            this, &Handle::moved);
-    connect(m_picker, &Qt3DRender::QObjectPicker::moved,
             this, &Handle::onMoved);
     connect(m_picker, &Qt3DRender::QObjectPicker::exited,
             this, &Handle::onExited);
     connect(m_picker, &Qt3DRender::QObjectPicker::pressed,
-            this, &Handle::pressed);
-
-    m_mouseDevice->setParent(this);
-    m_mouseHandler->setSourceDevice(m_mouseDevice);
-    addComponent(m_mouseHandler);
-    connect(m_mouseHandler, &Qt3DInput::QMouseHandler::exited,
-            [](){qDebug() << "test";});
+            this, &Handle::onPressed);
 
     // For the subclasses to add
     m_material = new Qt3DExtras::QPhongMaterial();
@@ -36,17 +27,29 @@ Handle::Handle(Qt3DCore::QNode *parent, const QVector3D &position, const QColor 
 }
 
 void Handle::onMoved() {
-    if (m_highlightOnHover) {
+    if (m_highlightOnHover && !m_isDragged) {
+        setHighlighted(true);
+    }
+}
+
+void Handle::onExited() {
+    if (m_highlightOnHover && !m_isDragged) {
+        setHighlighted(false);
+    }
+}
+
+void Handle::onPressed(Qt3DRender::QPickEvent *event) {
+    Q_EMIT pressed(event, m_axisConstraint);
+}
+
+void Handle::setHighlighted(bool highlighted) {
+    if (highlighted) {
         QColor hoverColor = QColor(qMin(255.f, (m_color.red() + m_hightlightColorOffset)),
                                    qMin(255.f, (m_color.green() + m_hightlightColorOffset)),
                                    qMin(255.f, (m_color.blue() + m_hightlightColorOffset)),
                                    255);
         m_material->setAmbient(hoverColor);
-    }
-}
-
-void Handle::onExited() {
-    if (m_highlightOnHover) {
+    } else {
         m_material->setAmbient(m_color);
     }
 }
@@ -63,6 +66,15 @@ void Handle::setHighlightOnHover(bool highlightOnHover) {
     m_highlightOnHover = highlightOnHover;
 }
 
+void Handle::setIsDragged(bool isDragged) {
+    m_isDragged = isDragged;
+    setHighlighted(isDragged);
+}
+
 Qt3DCore::QTransform *Handle::transform() const {
     return m_transform;
+}
+
+Handle::AxisConstraint Handle::axisConstraint() {
+    return m_axisConstraint;
 }
