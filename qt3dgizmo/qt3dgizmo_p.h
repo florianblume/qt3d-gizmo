@@ -30,7 +30,7 @@ public:
     Plane() {
     }
 
-    Plane(const QVector3D &normal, const QVector3D &position) {
+    Plane(const QVector3D &position, const QVector3D &normal) {
         this->normal = normal;
         this->position = position;
     }
@@ -121,7 +121,6 @@ public:
     Ray m_rayFromClickPosition;
     Plane m_translationPlane;
     QVector3D m_currentTranslationPosition;
-    QVector3D m_lastTranslationPosition;
     QVector3D m_translationDisplacement;
 
     Qt3DInput::QMouseDevice *m_mouseDevice;

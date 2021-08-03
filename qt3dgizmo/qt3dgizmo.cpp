@@ -97,7 +97,6 @@ void Qt3DGizmoPrivate::initialize(int x, int y, const QVector3D &position,
     // TODO: Differentiate between translation and rotation
     m_axisConstraint = axisConstraint;
     m_rayFromClickPosition = generate3DRayFromScreenToInfinity(x, y);
-    m_lastTranslationPosition = position;
     m_translationDisplacement = QVector3D();
     m_translationPlane = initializeTranslationPlane(position, axisConstraint);
 }
@@ -114,12 +113,11 @@ void Qt3DGizmoPrivate::update(int x, int y) {
         // Segment lies in plane
     }
 
-    m_currentTranslationPosition = applyTranslationConstraint(m_lastTranslationPosition,
+    m_currentTranslationPosition = applyTranslationConstraint(m_translationPlane.position,
                                                               intersection.second,
                                                               m_axisConstraint);
-    m_translationDisplacement = m_currentTranslationPosition - m_lastTranslationPosition;
+    m_translationDisplacement = m_currentTranslationPosition - m_translationPlane.position;
     m_delegateTransform->setTranslation(m_delegateTransform->translation() + m_translationDisplacement);
-    m_lastTranslationPosition = m_currentTranslationPosition;
     m_translationPlane.position = m_currentTranslationPosition;
 }
 

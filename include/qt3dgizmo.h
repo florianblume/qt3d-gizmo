@@ -40,6 +40,9 @@ public:
     // TODO r2 color
     // TODO r3 color
     // TODO highlight color
+    // TODO font
+    // TODO show axis labels
+    // TODO label size
 
     Q_ENUM(Mode)
 
