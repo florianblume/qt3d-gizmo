@@ -24,6 +24,10 @@ Handle::Handle(Qt3DCore::QNode *parent, AxisConstraint constraint, const QVector
     m_material = new Qt3DExtras::QPhongMaterial();
     m_material->setAmbient(color);
     m_material->setShininess(0.0f);
+
+    m_highlightColor = QColor(255, 255, 180);
+    m_highlightOnHover = true;
+    m_isDragged = false;
 }
 
 void Handle::onMoved() {
@@ -51,11 +55,7 @@ void Handle::onReleased() {
 
 void Handle::setHighlighted(bool highlighted) {
     if (highlighted) {
-        QColor hoverColor = QColor(qMin(255.f, (m_color.red() + m_hightlightColorOffset)),
-                                   qMin(255.f, (m_color.green() + m_hightlightColorOffset)),
-                                   qMin(255.f, (m_color.blue() + m_hightlightColorOffset)),
-                                   255);
-        m_material->setAmbient(hoverColor);
+        m_material->setAmbient(m_highlightColor);
     } else {
         m_material->setAmbient(m_color);
     }
@@ -67,6 +67,10 @@ void Handle::setCamera(Qt3DRender::QCamera *camera) {
 
 void Handle::setColor(const QColor &color) {
     m_color = color;
+}
+
+void Handle::setHighlightColor(const QColor &color) {
+    m_highlightColor = color;
 }
 
 void Handle::setHighlightOnHover(bool highlightOnHover) {

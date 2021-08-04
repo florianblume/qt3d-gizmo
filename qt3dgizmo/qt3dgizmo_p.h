@@ -92,7 +92,10 @@ public:
 
     // Not static since we need the camera matrices
     Ray generate3DRayFromScreenToInfinity(int x, int y);
-    Plane initializeTranslationPlane(const QVector3D &position, Handle::AxisConstraint translationConstraint);
+    static Plane initializeTranslationPlane(const Ray &clickRay, const QVector3D &position,
+                                            Handle::AxisConstraint translationConstraint);
+    static Plane initializeRotationPlane(const QVector3D &position,
+                                         Handle::AxisConstraint translationConstraint);
     static QVector3D computePlaneNormal(const Ray &ray, Handle::AxisConstraint translationConstraint);
     QVector3D applyTranslationConstraint(const QVector3D &position, const QVector3D &intersectionPosition,
                                          Handle::AxisConstraint translationConstraint);
@@ -109,9 +112,11 @@ public:
     bool m_mouseDownOnHandle = false;
 
     Ray m_rayFromClickPosition;
-    Plane m_translationPlane;
+    Plane m_plane;
     QVector3D m_currentTranslationPosition;
     QVector3D m_translationDisplacement;
+    // Last position on one of the rotation handles
+    QVector3D m_lastPositionOnRotationHandle;
 
     Qt3DInput::QMouseDevice *m_mouseDevice;
     Qt3DInput::QMouseHandler *m_mouseHandler;
@@ -124,6 +129,7 @@ public:
     Qt3DRender::QViewport *m_viewport;
 
     // Sphere to switch modes
+    float m_sphereHighlightScale = 1.4f;
     Qt3DCore::QEntity *m_sphereEntity;
     Qt3DExtras::QPhongMaterial *m_sphereMaterial;
     Qt3DExtras::QSphereMesh *m_sphereMesh;

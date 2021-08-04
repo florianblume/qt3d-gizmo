@@ -35,6 +35,7 @@ public:
 public Q_SLOTS:
     void setCamera(Qt3DRender::QCamera *camera);
     void setColor(const QColor &color);
+    void setHighlightColor(const QColor &color);
     void setHighlightOnHover(bool highlightOnHover);
     void setIsDragged(bool isDragged);
 
@@ -53,10 +54,10 @@ protected:
 protected:
     AxisConstraint m_axisConstraint;
     QColor m_color;
+    QColor m_highlightColor;
     Qt3DRender::QCamera *m_camera;
-    bool m_highlightOnHover = true;
-    bool m_isDragged = false;
-    float m_hightlightColorOffset = 180;
+    bool m_highlightOnHover;
+    bool m_isDragged;
     Qt3DCore::QTransform *m_transform;
     Qt3DRender::QObjectPicker *m_picker;
     Qt3DExtras::QPhongMaterial *m_material;
