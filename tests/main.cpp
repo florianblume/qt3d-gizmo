@@ -20,6 +20,7 @@
 #include <Qt3DExtras/QTorusMesh>
 #include <Qt3DExtras/QCylinderMesh>
 #include <Qt3DExtras/QPhongMaterial>
+#include <Qt3DExtras/QPlaneMesh>
 #include <Qt3DExtras/QForwardRenderer>
 #include <Qt3DExtras/QOrbitCameraController>
 #include <Qt3DExtras/QFirstPersonCameraController>
@@ -34,21 +35,37 @@ int main(int argc, char *argv[]) {
     Qt3DExtras::Qt3DWindow *graphicsWindow = new Qt3DExtras::Qt3DWindow();
     Qt3DCore::QEntity *root = new Qt3DCore::QEntity();
 
-    Qt3DCore::QEntity *objectEntity = new Qt3DCore::QEntity(root);
-    Qt3DExtras::QTorusMesh *mesh = new Qt3DExtras::QTorusMesh();
-    mesh->setRings(100);
-    mesh->setSlices(100);
-    mesh->setMinorRadius(0.5);
-    mesh->setRadius(1);
-    Qt3DExtras::QPhongMaterial *material = new Qt3DExtras::QPhongMaterial();
-    material->setAmbient("gray");
-    Qt3DCore::QTransform *transform = new Qt3DCore::QTransform();
     Qt3DRender::QLayer *objectsLayer = new Qt3DRender::QLayer;
+
+    Qt3DCore::QEntity *planeEntity = new Qt3DCore::QEntity(root);
+    Qt3DExtras::QPlaneMesh *planeMesh = new Qt3DExtras::QPlaneMesh();
+    planeMesh->setWidth(5);
+    planeMesh->setHeight(5);
+    Qt3DExtras::QPhongMaterial *planeMaterial = new Qt3DExtras::QPhongMaterial();
+    planeMaterial->setAmbient("lightgray");
+    Qt3DCore::QTransform *planeTransform = new Qt3DCore::QTransform();
     objectsLayer->setRecursive(true);
-    objectEntity->addComponent(mesh);
-    objectEntity->addComponent(material);
-    objectEntity->addComponent(transform);
-    objectEntity->addComponent(objectsLayer);
+    planeEntity->addComponent(planeMesh);
+    planeEntity->addComponent(planeMaterial);
+    planeEntity->addComponent(planeTransform);
+    planeEntity->addComponent(objectsLayer);
+
+    Qt3DCore::QEntity *torusEntity = new Qt3DCore::QEntity(root);
+    Qt3DExtras::QTorusMesh *torusMesh = new Qt3DExtras::QTorusMesh();
+    torusMesh->setRings(100);
+    torusMesh->setSlices(100);
+    torusMesh->setMinorRadius(0.3);
+    torusMesh->setRadius(0.5);
+    Qt3DExtras::QPhongMaterial *torusMaterial = new Qt3DExtras::QPhongMaterial();
+    torusMaterial->setAmbient(QColor(150, 100, 210));
+    Qt3DCore::QTransform *torusTransform = new Qt3DCore::QTransform();
+    torusTransform->setTranslation(QVector3D(0, 1, 0));
+
+    objectsLayer->setRecursive(true);
+    torusEntity->addComponent(torusMesh);
+    torusEntity->addComponent(torusMaterial);
+    torusEntity->addComponent(torusTransform);
+    torusEntity->addComponent(objectsLayer);
 
     Qt3DExtras::QFirstPersonCameraController *cameraController = new Qt3DExtras::QFirstPersonCameraController(root);
     //cameraController->setCamera(graphicsWindow->camera());
@@ -56,7 +73,7 @@ int main(int argc, char *argv[]) {
     graphicsWindow->camera()->setNearPlane(0.01f);
 
     Qt3DGizmo *gizmo = new Qt3DGizmo(root);
-    gizmo->setDelegateTransform(transform);
+    gizmo->setDelegateTransform(torusTransform);
     gizmo->setWindowSize(graphicsWindow->size());
     gizmo->setCamera(graphicsWindow->camera());
     Qt3DRender::QLayer *gizmoLayer = new Qt3DRender::QLayer;
@@ -94,8 +111,8 @@ int main(int argc, char *argv[]) {
 
     QTimer animationTimer;
     animationTimer.setInterval(10);
-    QObject::connect(&animationTimer, &QTimer::timeout, [graphicsWindow, transform](){
-        if (transform->translation().x() < 10) {
+    QObject::connect(&animationTimer, &QTimer::timeout, [graphicsWindow, torusTransform](){
+        if (torusTransform->translation().x() < 10) {
             //transform->setTranslation(transform->translation() + QVector3D(0.001, 0, 0));
         }
 
@@ -108,8 +125,8 @@ int main(int argc, char *argv[]) {
                      gizmo, &Qt3DGizmo::setWindowHeight);
 
     graphicsWindow->setRootEntity(root);
-    graphicsWindow->camera()->setPosition(QVector3D(2, 3, 7));
-    graphicsWindow->camera()->setViewCenter({0, 0, 0});
+    graphicsWindow->camera()->setPosition(QVector3D(6, 5, 7));
+    graphicsWindow->camera()->setViewCenter({0, 1, 0});
 
     graphicsWindow->show();
 

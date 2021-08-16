@@ -47,6 +47,10 @@ public:
     // TODO scale with distance
     // TODO set scale
     // TODO set allowed modes
+    // TODO switch between 3D and 2D appearance
+    // TODO set highlight color as absolute
+    // TODO set automatic size
+    // TODO set show mode switcher
 
     Q_ENUM(Mode)
 

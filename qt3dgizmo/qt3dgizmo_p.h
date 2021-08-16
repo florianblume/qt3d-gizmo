@@ -31,8 +31,8 @@ public:
     }
 
     Plane(const QVector3D &position, const QVector3D &normal) {
-        this->normal = normal;
         this->position = position;
+        this->normal = normal;
     }
 
     // TODO ATTENTION! This is OpenGL normal with y being up and down
@@ -111,12 +111,15 @@ public:
 
     bool m_mouseDownOnHandle = false;
 
+    QColor m_highlightColor = QColor(255, 255, 180);
+
     Ray m_rayFromClickPosition;
     Plane m_plane;
     QVector3D m_currentTranslationPosition;
     QVector3D m_translationDisplacement;
     // Last position on one of the rotation handles
     QVector3D m_lastPositionOnRotationHandle;
+    QMatrix4x4 m_transformMatrixBeforeRotation;
 
     Qt3DInput::QMouseDevice *m_mouseDevice;
     Qt3DInput::QMouseHandler *m_mouseHandler;

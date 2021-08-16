@@ -121,7 +121,6 @@ void Qt3DGizmoPrivate::initialize(Qt3DRender::QPickEvent *event,
     m_axisConstraint = axisConstraint;
     m_rayFromClickPosition = generate3DRayFromScreenToInfinity(event->position().x(),
                                                                event->position().y());
-
     if (m_currentMode == Qt3DGizmo::Translation) {
         m_translationDisplacement = QVector3D();
         m_plane = initializeTranslationPlane(m_rayFromClickPosition,
@@ -131,6 +130,7 @@ void Qt3DGizmoPrivate::initialize(Qt3DRender::QPickEvent *event,
         m_plane = initializeRotationPlane(m_delegateTransform->translation(),
                                           axisConstraint);
         m_lastPositionOnRotationHandle = event->worldIntersection();
+        m_transformMatrixBeforeRotation = m_delegateTransform->matrix();
     }
 }
 
@@ -156,24 +156,64 @@ void Qt3DGizmoPrivate::update(int x, int y) {
         m_delegateTransform->setTranslation(m_delegateTransform->translation() + m_translationDisplacement);
         m_plane.position = m_currentTranslationPosition;
     } else {
-        QVector3D point = m_plane.position + 1.0 * (intersection.second - m_plane.position).normalized();
-        QVector3D pointOnRotationHandle = (intersection.second - point).normalized();
-        float dotProduct = QVector3D::dotProduct(pointOnRotationHandle, m_lastPositionOnRotationHandle);
-        float angle = qAcos(dotProduct / (qSqrt(pointOnRotationHandle.lengthSquared()) * qSqrt(m_lastPositionOnRotationHandle.lengthSquared())));
-        switch (m_axisConstraint) {
-        case Handle::XTrans:
-            m_delegateTransform->setRotationX(angle);
-            break;
-        case Handle::YTrans:
-            m_delegateTransform->setRotationY(angle);
-            break;
-        case Handle::ZTrans:
-            m_delegateTransform->setRotationZ(angle);
-            break;
-        default:
-            break;
+        // Intersection point on unit circle offset with m_plane.position
+        QVector3D point = m_plane.position + (intersection.second - m_plane.position).normalized();
+        QVector3D pointOnRotationHandle;
+        // If we do not perform this check the rotation flickers when entering and
+        // exiting the rotation handle with the mouse, this checks whether the mouse
+        // is within the rotation handle or outside
+        /*
+        if (intersection.second.length() >= point.length() ||
+                qFuzzyCompare(intersection.second.length(), point.length())) {
+            pointOnRotationHandle = (intersection.second - point).normalized() + m_plane.position;
+        } else {
+            // TODO maybe normalized doesn't cut it when we are not using a unit circle
         }
-        m_lastPositionOnRotationHandle = pointOnRotationHandle;
+        */
+        pointOnRotationHandle = (point - intersection.second).normalized();
+        float dotProduct = QVector3D::dotProduct(intersection.second, m_lastPositionOnRotationHandle);
+        qDebug() << "dotProduct" << dotProduct;
+        float product = dotProduct / (qSqrt(pointOnRotationHandle.lengthSquared()) * qSqrt(m_lastPositionOnRotationHandle.lengthSquared()));
+        QMatrix4x4 transformMatrix;
+
+        qDebug() << "proudct" << product;
+
+        float angle = qAcos(product);
+
+        // angle can be nan when sign is nan (since division by 0) -> Then we don't care
+        if (!qIsNaN(angle)) {
+            angle = qRadiansToDegrees(angle);
+            float sign = QVector3D::dotProduct(
+                        QVector3D::crossProduct(m_lastPositionOnRotationHandle, pointOnRotationHandle), m_plane.normal);
+            qDebug() << "tmp sign" << sign;
+            sign = sign / qSqrt(sign * sign);
+            qDebug() << "sign" << sign;
+            qDebug() << "angle" << angle;
+            angle *= sign;
+            if (!qIsNaN(angle)) {
+                QVector3D axis;
+                switch (m_axisConstraint) {
+                case Handle::XTrans:
+                    axis = QVector3D(1, 0, 0);
+                    break;
+                case Handle::YTrans:
+                    axis = QVector3D(0, 1, 0);
+                    break;
+                case Handle::ZTrans:
+                    axis = QVector3D(0, 0, 1);
+                    break;
+                }
+                QMatrix4x4 addRotation;
+                addRotation.rotate(angle, axis);
+                QMatrix4x4 transformMatrix = m_delegateTransform->matrix();
+                QVector3D oldTranslation = m_delegateTransform->translation();
+                QMatrix4x4 rotatedMatrix = addRotation * transformMatrix;
+                m_delegateTransform->setMatrix(rotatedMatrix);
+                m_delegateTransform->setTranslation(oldTranslation);
+            }
+        }
+
+        m_lastPositionOnRotationHandle = intersection.second;
     }
 }
 
@@ -203,6 +243,7 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
             this, [d](){
         d->m_mouseDownOnHandle = false;
         d->removeHighlightsFromHanldes();
+        d->m_sphereMaterial->setAmbient(QColor(50, 50, 50, 50));
     });
     connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::positionChanged,
             this, [d](Qt3DInput::QMouseEvent *e){
@@ -239,11 +280,11 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     });
     connect(d->m_sphereObjectPicker, &Qt3DRender::QObjectPicker::moved,
             this, [d](){
-        d->m_sphereTransform->setScale(d->m_sphereHighlightScale);
+        d->m_sphereMaterial->setAmbient(d->m_highlightColor);
     });
     connect(d->m_sphereObjectPicker, &Qt3DRender::QObjectPicker::exited,
             this, [d](){
-        d->m_sphereTransform->setScale(1.0f);
+        d->m_sphereMaterial->setAmbient(QColor(50, 50, 50, 50));
     });
 
     d->m_sphereTransform = new Qt3DCore::QTransform;
@@ -338,7 +379,8 @@ void Qt3DGizmo::setMode(Mode mode) {
     for (Handle *rotationHandle : d->m_rotationHandles) {
         rotationHandle->setEnabled(mode == Rotation);
     }
-    d->m_sphereTransform->setScale(1.0f);
+    // To update the Gizmo and draw everything in the correct order (some weird bug)
+    d->m_sphereMaterial->setAmbient(QColor(50, 50, 50, 50));
 }
 
 void Qt3DGizmo::setWindowSize(const QSize &size) {
@@ -362,6 +404,7 @@ void Qt3DGizmo::setWindowHeight(int height) {
 void Qt3DGizmo::setDelegateTransform(Qt3DCore::QTransform *transform) {
     Q_D(Qt3DGizmo);
     d->m_delegateTransform = transform;
+    d->m_ownTransform->setTranslation(transform->translation());
     disconnect(d->m_delegateTransformConnection);
     d->m_delegateTransformConnection = connect(d->m_delegateTransform, &Qt3DCore::QTransform::translationChanged,
                                                d->m_ownTransform, &Qt3DCore::QTransform::setTranslation);
