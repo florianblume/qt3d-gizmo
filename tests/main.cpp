@@ -21,21 +21,25 @@
 #include <Qt3DExtras/QCylinderMesh>
 #include <Qt3DExtras/QPhongMaterial>
 #include <Qt3DExtras/QPlaneMesh>
+#include <Qt3DExtras/QCuboidMesh>
+#include <Qt3DRender/QObjectPicker>
+#include <Qt3DRender/QPickEvent>
 #include <Qt3DExtras/QForwardRenderer>
 #include <Qt3DExtras/QOrbitCameraController>
 #include <Qt3DExtras/QFirstPersonCameraController>
 
-int main(int argc, char *argv[]) {
-    QSurfaceFormat format = QSurfaceFormat::defaultFormat();
-    format.setSamples(8);
-    format.setVersion(3, 0);
-    QSurfaceFormat::setDefaultFormat(format);
-    QApplication a(argc, argv);
-
-    Qt3DExtras::Qt3DWindow *graphicsWindow = new Qt3DExtras::Qt3DWindow();
+Qt3DCore::QEntity *createScene(Qt3DExtras::Qt3DWindow *graphicsWindow) {
     Qt3DCore::QEntity *root = new Qt3DCore::QEntity();
 
+    Qt3DGizmo *gizmo = new Qt3DGizmo(root);
+    gizmo->setWindowSize(graphicsWindow->size());
+    gizmo->setCamera(graphicsWindow->camera());
+    Qt3DRender::QLayer *gizmoLayer = new Qt3DRender::QLayer;
+    gizmoLayer->setRecursive(true);
+    gizmo->addComponent(gizmoLayer);
+
     Qt3DRender::QLayer *objectsLayer = new Qt3DRender::QLayer;
+    objectsLayer->setRecursive(true);
 
     Qt3DCore::QEntity *planeEntity = new Qt3DCore::QEntity(root);
     Qt3DExtras::QPlaneMesh *planeMesh = new Qt3DExtras::QPlaneMesh();
@@ -60,25 +64,34 @@ int main(int argc, char *argv[]) {
     torusMaterial->setAmbient(QColor(150, 100, 210));
     Qt3DCore::QTransform *torusTransform = new Qt3DCore::QTransform();
     torusTransform->setTranslation(QVector3D(0, 1, 0));
-
-    objectsLayer->setRecursive(true);
+    Qt3DRender::QObjectPicker *torusPicker = new Qt3DRender::QObjectPicker;
+    QObject::connect(torusPicker, &Qt3DRender::QObjectPicker::clicked,
+                     [gizmo, torusTransform](){
+        gizmo->setDelegateTransform(torusTransform);
+    });
     torusEntity->addComponent(torusMesh);
     torusEntity->addComponent(torusMaterial);
     torusEntity->addComponent(torusTransform);
     torusEntity->addComponent(objectsLayer);
+    torusEntity->addComponent(torusPicker);
 
-    Qt3DExtras::QFirstPersonCameraController *cameraController = new Qt3DExtras::QFirstPersonCameraController(root);
-    //cameraController->setCamera(graphicsWindow->camera());
-
-    graphicsWindow->camera()->setNearPlane(0.01f);
-
-    Qt3DGizmo *gizmo = new Qt3DGizmo(root);
-    gizmo->setDelegateTransform(torusTransform);
-    gizmo->setWindowSize(graphicsWindow->size());
-    gizmo->setCamera(graphicsWindow->camera());
-    Qt3DRender::QLayer *gizmoLayer = new Qt3DRender::QLayer;
-    gizmoLayer->setRecursive(true);
-    gizmo->addComponent(gizmoLayer);
+    Qt3DCore::QEntity *cuboidEntity1 = new Qt3DCore::QEntity(root);
+    Qt3DExtras::QCuboidMesh *cuboidMesh1 = new Qt3DExtras::QCuboidMesh();
+    Qt3DExtras::QPhongMaterial *cuboidMaterial1 = new Qt3DExtras::QPhongMaterial();
+    cuboidMaterial1->setAmbient(QColor(100, 200, 110));
+    Qt3DCore::QTransform *cuboidTransform = new Qt3DCore::QTransform();
+    cuboidTransform->setTranslation(QVector3D(0.5, 0.5, 1.5));
+    cuboidTransform->setScale(0.5);
+    Qt3DRender::QObjectPicker *cuboidPicker1 = new Qt3DRender::QObjectPicker;
+    QObject::connect(cuboidPicker1, &Qt3DRender::QObjectPicker::clicked,
+                     [gizmo, cuboidTransform](){
+        gizmo->setDelegateTransform(cuboidTransform);
+    });
+    cuboidEntity1->addComponent(cuboidMesh1);
+    cuboidEntity1->addComponent(cuboidMaterial1);
+    cuboidEntity1->addComponent(cuboidTransform);
+    cuboidEntity1->addComponent(objectsLayer);
+    cuboidEntity1->addComponent(cuboidPicker1);
 
     Qt3DRender::QRenderSurfaceSelector *renderSurfaceSelector = new Qt3DRender::QRenderSurfaceSelector;
     renderSurfaceSelector->setSurface(graphicsWindow);
@@ -108,26 +121,28 @@ int main(int argc, char *argv[]) {
     graphicsWindow->setActiveFrameGraph(renderSurfaceSelector);
     graphicsWindow->renderSettings()->pickingSettings()->setPickMethod(Qt3DRender::QPickingSettings::TrianglePicking);
     graphicsWindow->renderSettings()->setRenderPolicy(Qt3DRender::QRenderSettings::Always);
-
-    QTimer animationTimer;
-    animationTimer.setInterval(10);
-    QObject::connect(&animationTimer, &QTimer::timeout, [graphicsWindow, torusTransform](){
-        if (torusTransform->translation().x() < 10) {
-            //transform->setTranslation(transform->translation() + QVector3D(0.001, 0, 0));
-        }
-
-    });
-    animationTimer.start();
+    graphicsWindow->camera()->setNearPlane(0.01f);
 
     QObject::connect(graphicsWindow, &Qt3DExtras::Qt3DWindow::widthChanged,
                      gizmo, &Qt3DGizmo::setWindowWidth);
     QObject::connect(graphicsWindow, &Qt3DExtras::Qt3DWindow::heightChanged,
                      gizmo, &Qt3DGizmo::setWindowHeight);
 
-    graphicsWindow->setRootEntity(root);
+    return root;
+}
+
+int main(int argc, char *argv[]) {
+    QSurfaceFormat format = QSurfaceFormat::defaultFormat();
+    format.setSamples(8);
+    format.setVersion(3, 0);
+    QSurfaceFormat::setDefaultFormat(format);
+    QApplication a(argc, argv);
+
+    Qt3DExtras::Qt3DWindow *graphicsWindow = new Qt3DExtras::Qt3DWindow();
     graphicsWindow->camera()->setPosition(QVector3D(6, 5, 7));
     graphicsWindow->camera()->setViewCenter({0, 1, 0});
-
+    Qt3DCore::QEntity *root = createScene(graphicsWindow);
+    graphicsWindow->setRootEntity(root);
     graphicsWindow->show();
 
     return a.exec();

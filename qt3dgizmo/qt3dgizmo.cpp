@@ -156,22 +156,20 @@ void Qt3DGizmoPrivate::update(int x, int y) {
         m_delegateTransform->setTranslation(m_delegateTransform->translation() + m_translationDisplacement);
         m_plane.position = m_currentTranslationPosition;
     } else {
-        // Intersection point on unit circle offset with m_plane.position
         QVector3D point = m_plane.position + (intersection.second - m_plane.position).normalized();
         QVector3D pointOnRotationHandle;
         // If we do not perform this check the rotation flickers when entering and
         // exiting the rotation handle with the mouse, this checks whether the mouse
         // is within the rotation handle or outside
-        /*
         if (intersection.second.length() >= point.length() ||
                 qFuzzyCompare(intersection.second.length(), point.length())) {
             pointOnRotationHandle = (intersection.second - point).normalized() + m_plane.position;
         } else {
             // TODO maybe normalized doesn't cut it when we are not using a unit circle
+            pointOnRotationHandle = (point - intersection.second).normalized() + m_plane.position;
         }
-        */
-        pointOnRotationHandle = (point - intersection.second).normalized();
-        float dotProduct = QVector3D::dotProduct(intersection.second, m_lastPositionOnRotationHandle);
+        pointOnRotationHandle = (point - intersection.second).normalized() + m_plane.position;
+        float dotProduct = QVector3D::dotProduct(pointOnRotationHandle, m_lastPositionOnRotationHandle);
         qDebug() << "dotProduct" << dotProduct;
         float product = dotProduct / (qSqrt(pointOnRotationHandle.lengthSquared()) * qSqrt(m_lastPositionOnRotationHandle.lengthSquared()));
         QMatrix4x4 transformMatrix;
@@ -213,7 +211,7 @@ void Qt3DGizmoPrivate::update(int x, int y) {
             }
         }
 
-        m_lastPositionOnRotationHandle = intersection.second;
+        m_lastPositionOnRotationHandle = pointOnRotationHandle;
     }
 }
 
@@ -344,9 +342,11 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     d->m_rotationHandles.append({d->m_rotationHandleX,
                                  d->m_rotationHandleY,
                                  d->m_rotationHandleZ});
+
     for (Handle* handle : d->m_rotationHandles) {
         handle->setEnabled(false);
     }
+    setEnabled(false);
 }
 
 Qt3DGizmo::Mode Qt3DGizmo::mode() const {
@@ -408,6 +408,7 @@ void Qt3DGizmo::setDelegateTransform(Qt3DCore::QTransform *transform) {
     disconnect(d->m_delegateTransformConnection);
     d->m_delegateTransformConnection = connect(d->m_delegateTransform, &Qt3DCore::QTransform::translationChanged,
                                                d->m_ownTransform, &Qt3DCore::QTransform::setTranslation);
+    setEnabled(true);
     Q_EMIT delegateTransformChanged(transform);
 }
 
