@@ -27,3 +27,6 @@ HEADERS += \
     qt3dgizmo.h \
     qt3dgizmo_p.h \
     rotationhandle.h
+
+RESOURCES += \
+    shaders.qrc

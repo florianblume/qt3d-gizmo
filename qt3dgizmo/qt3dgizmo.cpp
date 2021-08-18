@@ -84,6 +84,7 @@ Plane Qt3DGizmoPrivate::initializeRotationPlane(const QVector3D &position,
         normal = QVector3D(0, 0, 1);
         break;
     default:
+        // Can never occur
         break;
     }
 
@@ -129,8 +130,13 @@ void Qt3DGizmoPrivate::initialize(Qt3DRender::QPickEvent *event,
     } else {
         m_plane = initializeRotationPlane(m_delegateTransform->translation(),
                                           axisConstraint);
-        m_lastPositionOnRotationHandle = event->worldIntersection();
-        m_transformMatrixBeforeRotation = m_delegateTransform->matrix();
+        QPair<int, QVector3D> intersection = m_rayFromClickPosition.intersects(m_plane);
+        // We cannot store the intersection on the handle directly since it does not necessarily
+        // lie directly on the rotation plane (the handles are 3D circles), i.e. we need to
+        // project the ray onto the plane and store the intersection minus the plane's position
+        // to obtain a vector from origin
+        m_lastPositionOnRotationHandle = (intersection.second - m_plane.position).normalized();
+        m_initialOrientation = m_delegateTransform->rotation();
     }
 }
 
@@ -144,9 +150,9 @@ void Qt3DGizmoPrivate::update(int x, int y) {
         // There is an intersection
     } else if (intersection.first == 2) {
         // Segment lies in plane
+        // TODO we need to handle this special case and restrict plane translation
+        // to only one axis
     }
-
-    // TODO handle special cases where vector lies in plane
 
     if (m_currentMode == Qt3DGizmo::Translation) {
         m_currentTranslationPosition = applyTranslationConstraint(m_plane.position,
@@ -156,19 +162,70 @@ void Qt3DGizmoPrivate::update(int x, int y) {
         m_delegateTransform->setTranslation(m_delegateTransform->translation() + m_translationDisplacement);
         m_plane.position = m_currentTranslationPosition;
     } else {
-        QVector3D point = m_plane.position + (intersection.second - m_plane.position).normalized();
+
+        /*
+        QVector3D clickOffset = m_lastPositionOnRotationHandle - m_plane.position;
+        QVector3D rotatedPlaneNormal = m_plane.normal;
+        QVector4D thePlane = { rotatedPlaneNormal, -QVector3D::dotProduct(rotatedPlaneNormal, clickOffset) };
+        QVector3D rayDirection = m_rayFromClickPosition.end - m_rayFromClickPosition.start;
+
+        float denom = QVector3D::dotProduct(thePlane.toVector3D(), rayDirection);
+        float t = 0.0;
+        if (std::abs(denom) == 0) {
+            // No hit
+            return;
+        } else {
+            QVector4D rayOrigin = m_rayFromClickPosition.start.toVector4D();
+            rayOrigin.setW(1);
+            t = -QVector4D::dotProduct(thePlane, rayOrigin) / denom;
+        }
+
+        QVector3D centerOfRotation = m_plane.position + rotatedPlaneNormal *
+                QVector3D::dotProduct(rotatedPlaneNormal, clickOffset - m_plane.position);
+        QVector3D arm1 = (clickOffset - centerOfRotation).normalized();
+        QVector3D arm2 = (m_rayFromClickPosition.start + rayDirection * t - centerOfRotation).normalized();
+
+        float d = QVector3D::dotProduct(arm1, arm2);
+        qDebug() << d;
+        if (d > 0.9999f) {
+            //m_delegateTransform->setRotation(m_initialOrientation);
+            return;
+        }
+
+        float angle = std::acos(d);
+        if (angle < 0.0001f) {
+            //m_delegateTransform->setRotation(m_initialOrientation);
+            return;
+        }
+        qDebug() << "angle" << angle;
+
+        auto a = (QVector3D::crossProduct(arm1, arm2)).normalized();
+        QQuaternion newRotation = QQuaternion::fromAxisAndAngle(a, angle) * m_initialOrientation;
+        m_delegateTransform->setRotation(newRotation);
+        m_initialOrientation = newRotation;
+
+        m_lastPositionOnRotationHandle = intersection.second;
+        */
+
+        QVector3D point = (intersection.second - m_plane.position).normalized();
         QVector3D pointOnRotationHandle;
         // If we do not perform this check the rotation flickers when entering and
         // exiting the rotation handle with the mouse, this checks whether the mouse
         // is within the rotation handle or outside
         if (intersection.second.length() >= point.length() ||
                 qFuzzyCompare(intersection.second.length(), point.length())) {
-            pointOnRotationHandle = (intersection.second - point).normalized() + m_plane.position;
+            pointOnRotationHandle = (intersection.second - point).normalized();
         } else {
             // TODO maybe normalized doesn't cut it when we are not using a unit circle
-            pointOnRotationHandle = (point - intersection.second).normalized() + m_plane.position;
+            pointOnRotationHandle = (point - intersection.second).normalized();
         }
-        pointOnRotationHandle = (point - intersection.second).normalized() + m_plane.position;
+        //pointOnRotationHandle = (point - intersection.second).normalized();
+        QQuaternion rotation = QQuaternion::rotationTo(m_lastPositionOnRotationHandle,
+                                                       point);
+        m_delegateTransform->setRotation(rotation * m_initialOrientation);
+        //m_lastPositionOnRotationHandle = pointOnRotationHandle;
+
+        /*
         float dotProduct = QVector3D::dotProduct(pointOnRotationHandle, m_lastPositionOnRotationHandle);
         qDebug() << "dotProduct" << dotProduct;
         float product = dotProduct / (qSqrt(pointOnRotationHandle.lengthSquared()) * qSqrt(m_lastPositionOnRotationHandle.lengthSquared()));
@@ -187,7 +244,7 @@ void Qt3DGizmoPrivate::update(int x, int y) {
             sign = sign / qSqrt(sign * sign);
             qDebug() << "sign" << sign;
             qDebug() << "angle" << angle;
-            angle *= sign;
+            angle *= sign * 0.001f;
             if (!qIsNaN(angle)) {
                 QVector3D axis;
                 switch (m_axisConstraint) {
@@ -201,17 +258,18 @@ void Qt3DGizmoPrivate::update(int x, int y) {
                     axis = QVector3D(0, 0, 1);
                     break;
                 }
+
                 QMatrix4x4 addRotation;
                 addRotation.rotate(angle, axis);
                 QMatrix4x4 transformMatrix = m_delegateTransform->matrix();
                 QVector3D oldTranslation = m_delegateTransform->translation();
                 QMatrix4x4 rotatedMatrix = addRotation * transformMatrix;
+                rotatedMatrix.setColumn(3, oldTranslation);
                 m_delegateTransform->setMatrix(rotatedMatrix);
-                m_delegateTransform->setTranslation(oldTranslation);
             }
         }
-
-        m_lastPositionOnRotationHandle = pointOnRotationHandle;
+        */
+        //m_lastPositionOnRotationHandle = pointOnRotationHandle;
     }
 }
 

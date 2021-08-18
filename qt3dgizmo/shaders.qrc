@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>gizmo.frag</file>
+        <file>gizmo.vert</file>
+    </qresource>
+</RCC>

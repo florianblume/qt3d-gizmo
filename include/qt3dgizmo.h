@@ -51,6 +51,7 @@ public:
     // TODO set highlight color as absolute
     // TODO set automatic size
     // TODO set show mode switcher
+    // TODO hide mouse when rotating/translating
 
     Q_ENUM(Mode)
 

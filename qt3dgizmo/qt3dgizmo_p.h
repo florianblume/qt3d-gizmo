@@ -119,7 +119,8 @@ public:
     QVector3D m_translationDisplacement;
     // Last position on one of the rotation handles
     QVector3D m_lastPositionOnRotationHandle;
-    QMatrix4x4 m_transformMatrixBeforeRotation;
+    // Rotation before the user starts rotating
+    QQuaternion m_initialOrientation;
 
     Qt3DInput::QMouseDevice *m_mouseDevice;
     Qt3DInput::QMouseHandler *m_mouseHandler;
