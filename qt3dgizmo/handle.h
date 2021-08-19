@@ -1,6 +1,8 @@
 #ifndef HANDLE_H
 #define HANDLE_H
 
+#include "flatmaterial.h"
+
 #include <QObject>
 #include <QColor>
 
@@ -38,6 +40,7 @@ public Q_SLOTS:
     void setHighlightColor(const QColor &color);
     void setHighlightOnHover(bool highlightOnHover);
     void setIsDragged(bool isDragged);
+    void setFlatAppearance(bool flatAppearance);
 
 Q_SIGNALS:
     void pressed(Qt3DRender::QPickEvent *event, AxisConstraint constraint);
@@ -47,9 +50,9 @@ private Q_SLOTS:
     void onExited();
     void onPressed(Qt3DRender::QPickEvent *event);
     void onReleased();
-
 protected:
     void setHighlighted(bool highlighted);
+    virtual void handleAppearanceChange() = 0;
 
 protected:
     AxisConstraint m_axisConstraint;
@@ -60,7 +63,9 @@ protected:
     bool m_isDragged;
     Qt3DCore::QTransform *m_transform;
     Qt3DRender::QObjectPicker *m_picker;
-    Qt3DExtras::QPhongMaterial *m_material;
+    FlatMaterial *m_flatMaterial;
+    Qt3DExtras::QPhongMaterial *m_phongMaterial;
+    bool m_flatAppearance = true;
 };
 
 #endif // HANDLE_H

@@ -15,7 +15,11 @@ class RotationHandle : public Handle {
 public:
     RotationHandle(Qt3DCore::QNode *parent, AxisConstraint constraint, const QVector3D &position, const QColor &color);
 
+protected:
+    void handleAppearanceChange() override;
+
 private:
+    Qt3DCore::QEntity *m_torusEntity;
     Qt3DExtras::QTorusMesh *m_torusMesh;
 };
 

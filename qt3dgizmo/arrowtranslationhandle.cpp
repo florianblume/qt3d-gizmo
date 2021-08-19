@@ -18,7 +18,7 @@ ArrowTranslationHandle::ArrowTranslationHandle(Qt3DCore::QNode *parent,AxisConst
     m_cylinderTransform = new Qt3DCore::QTransform;
     m_cylinderTransform->setTranslation(QVector3D(0.0f, 0.4f, 0.0f));
     m_cylinderEntity->addComponent(m_cylinderMesh);
-    m_cylinderEntity->addComponent(m_material);
+    m_cylinderEntity->addComponent(m_flatMaterial);
     m_cylinderEntity->addComponent(m_cylinderTransform);
 
     m_coneEntity = new Qt3DCore::QEntity(this);
@@ -31,7 +31,7 @@ ArrowTranslationHandle::ArrowTranslationHandle(Qt3DCore::QNode *parent,AxisConst
     m_coneTransform = new Qt3DCore::QTransform;
     m_coneTransform->setTranslation(QVector3D(0.f, 0.9f, 0.f));
     m_coneEntity->addComponent(m_coneMesh);
-    m_coneEntity->addComponent(m_material);
+    m_coneEntity->addComponent(m_flatMaterial);
     m_coneEntity->addComponent(m_coneTransform);
 
     m_labelEntity = new Qt3DExtras::QText2DEntity(m_coneEntity);
@@ -75,6 +75,20 @@ void ArrowTranslationHandle::setCamera(Qt3DRender::QCamera *camera) {
 void ArrowTranslationHandle::setColor(const QColor &color) {
     Handle::setColor(color);
     m_labelEntity->setColor(color);
+}
+
+void ArrowTranslationHandle::handleAppearanceChange() {
+    if (m_flatAppearance) {
+        m_cylinderEntity->removeComponent(m_phongMaterial);
+        m_cylinderEntity->addComponent(m_flatMaterial);
+        m_coneEntity->removeComponent(m_phongMaterial);
+        m_coneEntity->addComponent(m_flatMaterial);
+    } else {
+        m_cylinderEntity->removeComponent(m_flatMaterial);
+        m_cylinderEntity->addComponent(m_phongMaterial);
+        m_coneEntity->removeComponent(m_flatMaterial);
+        m_coneEntity->addComponent(m_phongMaterial);
+    }
 }
 
 

@@ -1,4 +1,5 @@
 #include "handle.h"
+#include "flatmaterial.h"
 
 #include <QtMath>
 
@@ -21,9 +22,12 @@ Handle::Handle(Qt3DCore::QNode *parent, AxisConstraint constraint, const QVector
             this, &Handle::onPressed);
 
     // For the subclasses to add
-    m_material = new Qt3DExtras::QPhongMaterial();
-    m_material->setAmbient(color);
-    m_material->setShininess(0.0f);
+    m_phongMaterial = new Qt3DExtras::QPhongMaterial();
+    m_phongMaterial->setAmbient(color);
+    m_phongMaterial->setShininess(0.0f);
+
+    m_flatMaterial = new FlatMaterial();
+    m_flatMaterial->setColor(color);
 
     m_highlightColor = QColor(255, 255, 180);
     m_highlightOnHover = true;
@@ -55,9 +59,11 @@ void Handle::onReleased() {
 
 void Handle::setHighlighted(bool highlighted) {
     if (highlighted) {
-        m_material->setAmbient(m_highlightColor);
+        m_phongMaterial->setAmbient(m_highlightColor);
+        m_flatMaterial->setColor(m_highlightColor);
     } else {
-        m_material->setAmbient(m_color);
+        m_phongMaterial->setAmbient(m_color);
+        m_flatMaterial->setColor(m_color);
     }
 }
 
@@ -80,6 +86,15 @@ void Handle::setHighlightOnHover(bool highlightOnHover) {
 void Handle::setIsDragged(bool isDragged) {
     m_isDragged = isDragged;
     setHighlighted(isDragged);
+}
+
+void Handle::setFlatAppearance(bool flatAppearance) {
+    // TODO remove check, this happens in the main class already
+    if (m_flatAppearance != flatAppearance) {
+        // Appearance actually changed
+        m_flatAppearance = flatAppearance;
+        handleAppearanceChange();
+    }
 }
 
 Qt3DCore::QTransform *Handle::transform() const {

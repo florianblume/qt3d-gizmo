@@ -13,6 +13,9 @@ class PlaneTranslationHandle : public Handle {
 public:
     PlaneTranslationHandle(Qt3DCore::QNode *parent, AxisConstraint constraint, const QVector3D &position, const QColor &color);
 
+protected:
+    void handleAppearanceChange() override;
+
 private:
     Qt3DCore::QEntity *m_planeFrontEntity;
     Qt3DExtras::QPlaneMesh *m_planeMeshFront;

@@ -102,6 +102,14 @@ public:
     void initialize(Qt3DRender::QPickEvent *event, Handle::AxisConstraint axisConstraint);
     void update(int x, int y);
     void removeHighlightsFromHanldes();
+    void adjustScaleToCameraDistance();
+
+    // Configurable properties
+    float m_scale = 1.0f;
+    bool m_scaleToCameraDistance = true;
+    bool m_hideMouseWhileTransforming = true;
+    bool m_currentlyHidingMouse = false;
+    bool m_flatAppearance = true;
 
     Qt3DGizmo::Mode m_currentMode = Qt3DGizmo::Mode::Translation;
 
@@ -109,9 +117,11 @@ public:
 
     Handle::AxisConstraint m_axisConstraint;
 
+    QMetaObject::Connection m_cameraViewMatrixChangedConnection;
+
     bool m_mouseDownOnHandle = false;
 
-    QColor m_highlightColor = QColor(255, 255, 180);
+    QColor m_handleHighlightColor = QColor(255, 255, 180);
 
     Ray m_rayFromClickPosition;
     Plane m_plane;
@@ -127,7 +137,8 @@ public:
 
     Qt3DCore::QTransform *m_delegateTransform;
     Qt3DCore::QTransform *m_ownTransform;
-    QMetaObject::Connection m_delegateTransformConnection;
+    QMetaObject::Connection m_delegateTransformTranslationChangedConnection;
+    QMetaObject::Connection m_delegateTransformAdjustScaleConnection;
 
     Qt3DRender::QCamera *m_camera;
     Qt3DRender::QViewport *m_viewport;
@@ -135,7 +146,9 @@ public:
     // Sphere to switch modes
     float m_sphereHighlightScale = 1.4f;
     Qt3DCore::QEntity *m_sphereEntity;
-    Qt3DExtras::QPhongMaterial *m_sphereMaterial;
+    Qt3DExtras::QPhongMaterial *m_spherePhongMaterial;
+    FlatMaterial *m_sphereFlatMaterial;
+    QColor m_sphereNormalColor = QColor(50, 50, 50, 50);
     Qt3DExtras::QSphereMesh *m_sphereMesh;
     Qt3DRender::QObjectPicker *m_sphereObjectPicker;
     Qt3DCore::QTransform *m_sphereTransform;

@@ -25,6 +25,13 @@ public:
     Q_PROPERTY(QSize windowSize READ windowSize WRITE setWindowSize NOTIFY windowSizeChanged)
     Q_PROPERTY(Qt3DCore::QTransform* delegateTransform READ delegateTransform WRITE setDelegateTransform NOTIFY delegateTransformChanged)
     Q_PROPERTY(Qt3DRender::QCamera *camera READ camera WRITE setCamera NOTIFY cameraChanged)
+
+    Q_PROPERTY(float scale READ scale WRITE setScale NOTIFY scaleChanged)
+    Q_PROPERTY(bool scaleToCameraDistance READ scaleToCameraDistance WRITE setScaleToCameraDistance NOTIFY scaleToCameraDistanceChanged)
+    Q_PROPERTY(bool hideMouseWhileTransforming READ hideMouseWhileTransforming
+               WRITE setHideMouseWhileTransforming NOTIFY hideMouseWhileTransformingChanged)
+    Q_PROPERTY(bool flatAppearance READ flatAppearance WRITE setFlatAppearance NOTIFY flatAppearanceChanged)
+
     // TODO line width
     // TODO plane transform size
     // TODO plane transform offset
@@ -40,18 +47,18 @@ public:
     // TODO r2 color
     // TODO r3 color
     // TODO highlight color
-    // TODO font
+    // TODO highlight color absolute or relative
+    // TODO font for axis labels
     // TODO show translation axis labels
     // TODO label size
     // TODO set position on delegate transform
-    // TODO scale with distance
-    // TODO set scale
     // TODO set allowed modes
     // TODO switch between 3D and 2D appearance
-    // TODO set highlight color as absolute
-    // TODO set automatic size
-    // TODO set show mode switcher
+    // TODO set allow mode switching
     // TODO hide mouse when rotating/translating
+    // TODO show translation handles
+    // TODO show rotation handles
+    // TODO show only active handles
 
     Q_ENUM(Mode)
 
@@ -62,6 +69,11 @@ public:
     Qt3DCore::QTransform *delegateTransform() const;
     Qt3DRender::QCamera *camera() const;
 
+    float scale() const;
+    bool scaleToCameraDistance() const;
+    bool hideMouseWhileTransforming() const;
+    bool flatAppearance() const;
+
 public Q_SLOTS:
     void setMode(Qt3DGizmo::Mode mode);
     void setWindowSize(const QSize &size);
@@ -70,11 +82,21 @@ public Q_SLOTS:
     void setDelegateTransform(Qt3DCore::QTransform *transform);
     void setCamera(Qt3DRender::QCamera *camera);
 
+    void setScale(float scale);
+    void setScaleToCameraDistance(bool scaleToCameraDistance);
+    void setHideMouseWhileTransforming(bool hideMouseWhileTransforming);
+    void setFlatAppearance(bool flatAppearance);
+
 Q_SIGNALS:
     void modeChanged(Mode mode);
     void windowSizeChanged(const QSize &size);
     void delegateTransformChanged(Qt3DCore::QTransform *transform);
     void cameraChanged(Qt3DRender::QCamera *camera);
+
+    void scaleChanged(float scale);
+    void scaleToCameraDistanceChanged(bool scaleToCameraDistance);
+    void hideMouseWhileTransformingChanged(bool hideMouseWhileTransforming);
+    void flatAppearanceChanged(bool flatAppearance);
 
 protected:
     Qt3DGizmoPrivate *d_ptr;

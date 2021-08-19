@@ -25,6 +25,9 @@ public Q_SLOTS:
     void setCamera(Qt3DRender::QCamera *camera);
     void setColor(const QColor &color);
 
+protected:
+    void handleAppearanceChange() override;
+
 private:
     QString m_label;
 

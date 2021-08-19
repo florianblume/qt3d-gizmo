@@ -15,6 +15,7 @@ DESTDIR += $$PWD/../lib
 
 SOURCES += \
     arrowtranslationhandle.cpp \
+    flatmaterial.cpp \
     handle.cpp \
     planetranslationhandle.cpp \
     qt3dgizmo.cpp \
@@ -22,6 +23,7 @@ SOURCES += \
 
 HEADERS += \
     arrowtranslationhandle.h \
+    flatmaterial.h \
     handle.h \
     planetranslationhandle.h \
     qt3dgizmo.h \
