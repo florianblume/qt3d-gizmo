@@ -34,6 +34,7 @@ Qt3DCore::QEntity *createScene(Qt3DExtras::Qt3DWindow *graphicsWindow) {
     Qt3DGizmo *gizmo = new Qt3DGizmo(root);
     gizmo->setWindowSize(graphicsWindow->size());
     gizmo->setCamera(graphicsWindow->camera());
+    gizmo->setScale(0.9);
     Qt3DRender::QLayer *gizmoLayer = new Qt3DRender::QLayer;
     gizmoLayer->setRecursive(true);
     gizmo->addComponent(gizmoLayer);
@@ -77,21 +78,41 @@ Qt3DCore::QEntity *createScene(Qt3DExtras::Qt3DWindow *graphicsWindow) {
 
     Qt3DCore::QEntity *cuboidEntity1 = new Qt3DCore::QEntity(root);
     Qt3DExtras::QCuboidMesh *cuboidMesh1 = new Qt3DExtras::QCuboidMesh();
+    cuboidMesh1->setXExtent(0.3);
+    cuboidMesh1->setYExtent(0.3);
+    cuboidMesh1->setZExtent(0.3);
     Qt3DExtras::QPhongMaterial *cuboidMaterial1 = new Qt3DExtras::QPhongMaterial();
-    cuboidMaterial1->setAmbient(QColor(100, 200, 110));
-    Qt3DCore::QTransform *cuboidTransform = new Qt3DCore::QTransform();
-    cuboidTransform->setTranslation(QVector3D(0.5, 0.5, 1.5));
-    cuboidTransform->setScale(0.5);
+    cuboidMaterial1->setAmbient(QColor(200, 100, 110));
+    Qt3DCore::QTransform *cuboidTransform1 = new Qt3DCore::QTransform();
+    cuboidTransform1->setTranslation(QVector3D(0.5, 0.5, 1.5));
     Qt3DRender::QObjectPicker *cuboidPicker1 = new Qt3DRender::QObjectPicker;
     QObject::connect(cuboidPicker1, &Qt3DRender::QObjectPicker::clicked,
-                     [gizmo, cuboidTransform](){
-        gizmo->setDelegateTransform(cuboidTransform);
+                     [gizmo, cuboidTransform1](){
+        gizmo->setDelegateTransform(cuboidTransform1);
     });
     cuboidEntity1->addComponent(cuboidMesh1);
     cuboidEntity1->addComponent(cuboidMaterial1);
-    cuboidEntity1->addComponent(cuboidTransform);
+    cuboidEntity1->addComponent(cuboidTransform1);
     cuboidEntity1->addComponent(objectsLayer);
     cuboidEntity1->addComponent(cuboidPicker1);
+
+    Qt3DCore::QEntity *cuboidEntity2 = new Qt3DCore::QEntity(root);
+    Qt3DExtras::QCuboidMesh *cuboidMesh2 = new Qt3DExtras::QCuboidMesh();
+    Qt3DExtras::QPhongMaterial *cuboidMaterial2 = new Qt3DExtras::QPhongMaterial();
+    cuboidMaterial2->setAmbient(QColor(100, 100, 100));
+    Qt3DCore::QTransform *cuboidTransform2 = new Qt3DCore::QTransform();
+    cuboidTransform2->setTranslation(QVector3D(1.0, 0.5, 2.0));
+    cuboidTransform2->setScale(0.5);
+    Qt3DRender::QObjectPicker *cuboidPicker2 = new Qt3DRender::QObjectPicker;
+    QObject::connect(cuboidPicker2, &Qt3DRender::QObjectPicker::clicked,
+                     [gizmo, cuboidTransform2](){
+        gizmo->setDelegateTransform(cuboidTransform2);
+    });
+    cuboidEntity2->addComponent(cuboidMesh2);
+    cuboidEntity2->addComponent(cuboidMaterial2);
+    cuboidEntity2->addComponent(cuboidTransform2);
+    cuboidEntity2->addComponent(objectsLayer);
+    cuboidEntity2->addComponent(cuboidPicker2);
 
     Qt3DRender::QRenderSurfaceSelector *renderSurfaceSelector = new Qt3DRender::QRenderSurfaceSelector;
     renderSurfaceSelector->setSurface(graphicsWindow);
@@ -120,6 +141,7 @@ Qt3DCore::QEntity *createScene(Qt3DExtras::Qt3DWindow *graphicsWindow) {
 
     graphicsWindow->setActiveFrameGraph(renderSurfaceSelector);
     graphicsWindow->renderSettings()->pickingSettings()->setPickMethod(Qt3DRender::QPickingSettings::TrianglePicking);
+    graphicsWindow->renderSettings()->pickingSettings()->setPickResultMode(Qt3DRender::QPickingSettings::AllPicks);
     graphicsWindow->renderSettings()->setRenderPolicy(Qt3DRender::QRenderSettings::Always);
     graphicsWindow->camera()->setNearPlane(0.01f);
 
@@ -139,8 +161,8 @@ int main(int argc, char *argv[]) {
     QApplication a(argc, argv);
 
     Qt3DExtras::Qt3DWindow *graphicsWindow = new Qt3DExtras::Qt3DWindow();
-    graphicsWindow->camera()->setPosition(QVector3D(6, 5, 7));
-    graphicsWindow->camera()->setViewCenter({0, 1, 0});
+    graphicsWindow->camera()->setPosition(QVector3D(1.7, 3, 4));
+    graphicsWindow->camera()->setViewCenter({-0.4, 1, 0});
     Qt3DCore::QEntity *root = createScene(graphicsWindow);
     graphicsWindow->setRootEntity(root);
     graphicsWindow->show();

@@ -32,6 +32,7 @@ Handle::Handle(Qt3DCore::QNode *parent, AxisConstraint constraint, const QVector
     m_highlightColor = QColor(255, 255, 180);
     m_highlightOnHover = true;
     m_isDragged = false;
+    qDebug() << "handle" << this->id();
 }
 
 void Handle::onMoved() {
@@ -95,6 +96,12 @@ void Handle::setFlatAppearance(bool flatAppearance) {
         m_flatAppearance = flatAppearance;
         handleAppearanceChange();
     }
+}
+
+void Handle::setEnabled(bool enabled) {
+    m_picker->setEnabled(enabled);
+    m_flatMaterial->setEnabled(enabled);
+    m_phongMaterial->setEnabled(enabled);
 }
 
 Qt3DCore::QTransform *Handle::transform() const {

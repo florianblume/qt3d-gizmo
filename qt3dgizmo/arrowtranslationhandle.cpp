@@ -43,6 +43,8 @@ ArrowTranslationHandle::ArrowTranslationHandle(Qt3DCore::QNode *parent,AxisConst
     m_labelEntity->setWidth(5);
     m_labelEntity->setHeight(5);
     m_labelEntityTransform->setScale(0.07);
+
+    qDebug() << label << this->id() << m_coneEntity->id() << m_cylinderEntity->id();
 }
 
 
@@ -75,6 +77,11 @@ void ArrowTranslationHandle::setCamera(Qt3DRender::QCamera *camera) {
 void ArrowTranslationHandle::setColor(const QColor &color) {
     Handle::setColor(color);
     m_labelEntity->setColor(color);
+}
+
+void ArrowTranslationHandle::setEnabled(bool enabled) {
+    Handle::setEnabled(enabled);
+    m_labelEntity->setEnabled(enabled);
 }
 
 void ArrowTranslationHandle::handleAppearanceChange() {

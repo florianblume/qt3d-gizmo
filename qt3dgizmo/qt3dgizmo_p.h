@@ -105,7 +105,7 @@ public:
     void adjustScaleToCameraDistance();
 
     // Configurable properties
-    float m_scale = 1.0f;
+    float m_scale = 1.f;
     bool m_scaleToCameraDistance = true;
     bool m_hideMouseWhileTransforming = true;
     bool m_currentlyHidingMouse = false;
@@ -117,7 +117,6 @@ public:
 
     Handle::AxisConstraint m_axisConstraint;
 
-    QMetaObject::Connection m_cameraViewMatrixChangedConnection;
 
     bool m_mouseDownOnHandle = false;
 
@@ -140,7 +139,8 @@ public:
     QMetaObject::Connection m_delegateTransformTranslationChangedConnection;
     QMetaObject::Connection m_delegateTransformAdjustScaleConnection;
 
-    Qt3DRender::QCamera *m_camera;
+    QMetaObject::Connection m_cameraViewMatrixChangedConnection;
+    Qt3DRender::QCamera *m_camera = Q_NULLPTR;
     Qt3DRender::QViewport *m_viewport;
 
     // Sphere to switch modes

@@ -191,7 +191,7 @@ void Qt3DGizmoPrivate::removeHighlightsFromHanldes() {
 }
 
 void Qt3DGizmoPrivate::adjustScaleToCameraDistance() {
-    if (m_scaleToCameraDistance) {
+    if (m_scaleToCameraDistance && m_camera) {
         // TODO Not completely working yet
         float reciprScaleOnscreen = 0.05;
         float w = ((m_camera->projectionMatrix() * m_camera->viewMatrix() * m_ownTransform->matrix()) * QVector4D(0, 0, 0, 1)).w();
@@ -343,6 +343,7 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
         d->m_rotationHandles[i]->setEnabled(false);
     }
     setEnabled(false);
+    setScale(d->m_scale);
 }
 
 Qt3DGizmo::Mode Qt3DGizmo::mode() const {
@@ -363,6 +364,21 @@ Qt3DCore::QTransform *Qt3DGizmo::delegateTransform() const {
 Qt3DRender::QCamera *Qt3DGizmo::camera() const {
     Q_D(const Qt3DGizmo);
     return d->m_camera;
+}
+
+void Qt3DGizmo::setEnabled(bool enabled) {
+    Q_D(const Qt3DGizmo);
+    if (d->m_currentMode == Translation) {
+        for (int i = 0; i < d->m_translationHandles.size(); i++) {
+            d->m_translationHandles[i]->setEnabled(enabled);
+        }
+    } else {
+        for (int i = 0; i < d->m_rotationHandles.size(); i++) {
+            d->m_rotationHandles[i]->setEnabled(enabled);
+        }
+    }
+    d->m_spherePhongMaterial->setEnabled(enabled);
+    d->m_sphereFlatMaterial->setEnabled(enabled);
 }
 
 float Qt3DGizmo::scale() const {
@@ -396,7 +412,7 @@ void Qt3DGizmo::setMode(Mode mode) {
         d->m_rotationHandles[i]->setEnabled(mode == Rotation);
     }
     // To update the Gizmo and draw everything in the correct order (some weird bug)
-    d->m_spherePhongMaterial->setAmbient(QColor(50, 50, 50, 50));
+    d->m_spherePhongMaterial->setAmbient(d->m_sphereNormalColor);
 }
 
 void Qt3DGizmo::setWindowSize(const QSize &size) {
@@ -419,6 +435,7 @@ void Qt3DGizmo::setWindowHeight(int height) {
 
 void Qt3DGizmo::setDelegateTransform(Qt3DCore::QTransform *transform) {
     Q_D(Qt3DGizmo);
+    setEnabled(true);
     d->m_delegateTransform = transform;
     d->m_ownTransform->setTranslation(transform->translation());
     disconnect(d->m_delegateTransformTranslationChangedConnection);
@@ -430,7 +447,6 @@ void Qt3DGizmo::setDelegateTransform(Qt3DCore::QTransform *transform) {
                 d->m_delegateTransform, &Qt3DCore::QTransform::translationChanged,
                 d, &Qt3DGizmoPrivate::adjustScaleToCameraDistance);
     d->adjustScaleToCameraDistance();
-    setEnabled(true);
     Q_EMIT delegateTransformChanged(transform);
 }
 
@@ -444,6 +460,7 @@ void Qt3DGizmo::setCamera(Qt3DRender::QCamera *camera) {
     d->m_cameraViewMatrixChangedConnection =
             connect(camera, &Qt3DRender::QCamera::viewMatrixChanged,
                     d, &Qt3DGizmoPrivate::adjustScaleToCameraDistance);
+    d->adjustScaleToCameraDistance();
     Q_EMIT cameraChanged(camera);
 }
 
@@ -458,7 +475,7 @@ void Qt3DGizmo::setScaleToCameraDistance(bool scaleToCameraDistance) {
     Q_D(Qt3DGizmo);
     d->m_scaleToCameraDistance = scaleToCameraDistance;
     if (!scaleToCameraDistance) {
-        d->m_ownTransform->setScale(1.0);
+        d->m_ownTransform->setScale(d->m_scale);
     } else {
         d->adjustScaleToCameraDistance();
     }

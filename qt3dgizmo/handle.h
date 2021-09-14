@@ -41,6 +41,7 @@ public Q_SLOTS:
     void setHighlightOnHover(bool highlightOnHover);
     void setIsDragged(bool isDragged);
     void setFlatAppearance(bool flatAppearance);
+    virtual void setEnabled(bool enabled);
 
 Q_SIGNALS:
     void pressed(Qt3DRender::QPickEvent *event, AxisConstraint constraint);

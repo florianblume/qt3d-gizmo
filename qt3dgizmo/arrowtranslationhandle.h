@@ -24,6 +24,7 @@ public Q_SLOTS:
     void invertTextRotation(const QMatrix4x4 &viewMatix);
     void setCamera(Qt3DRender::QCamera *camera);
     void setColor(const QColor &color);
+    void setEnabled(bool enabled) override;
 
 protected:
     void handleAppearanceChange() override;

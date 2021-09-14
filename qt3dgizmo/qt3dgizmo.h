@@ -68,6 +68,7 @@ public:
     QSize windowSize() const;
     Qt3DCore::QTransform *delegateTransform() const;
     Qt3DRender::QCamera *camera() const;
+    void setEnabled(bool enabled);
 
     float scale() const;
     bool scaleToCameraDistance() const;
