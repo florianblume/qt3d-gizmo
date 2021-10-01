@@ -27,14 +27,16 @@
 #include <Qt3DExtras/QForwardRenderer>
 #include <Qt3DExtras/QOrbitCameraController>
 #include <Qt3DExtras/QFirstPersonCameraController>
+#include <Qt3DRender/QDispatchCompute>
+#include <Qt3DRender/QBufferCapture>
 
 Qt3DCore::QEntity *createScene(Qt3DExtras::Qt3DWindow *graphicsWindow) {
     Qt3DCore::QEntity *root = new Qt3DCore::QEntity();
 
     Qt3DGizmo *gizmo = new Qt3DGizmo(root);
-    gizmo->setWindowSize(graphicsWindow->size());
-    gizmo->setCamera(graphicsWindow->camera());
-    gizmo->setScale(0.9);
+    // If you allow resizing of the window you need to always update the gizmo's window size
+    // It needs it for unprojection
+    gizmo->setScale(0.7);
     Qt3DRender::QLayer *gizmoLayer = new Qt3DRender::QLayer;
     gizmoLayer->setRecursive(true);
     gizmo->addComponent(gizmoLayer);
@@ -123,6 +125,11 @@ Qt3DCore::QEntity *createScene(Qt3DExtras::Qt3DWindow *graphicsWindow) {
     Qt3DRender::QDepthTest *depthTest = new Qt3DRender::QDepthTest;
     depthTest->setDepthFunction(Qt3DRender::QDepthTest::LessOrEqual);
     renderStateSet->addRenderState(depthTest);
+    Qt3DRender::QDispatchCompute *dispatchCompute = new Qt3DRender::QDispatchCompute(renderStateSet);
+    dispatchCompute->setWorkGroupX(1);
+    dispatchCompute->setWorkGroupY(1);
+    dispatchCompute->setWorkGroupZ(1);
+    Qt3DRender::QBufferCapture *bufferCapture = new Qt3DRender::QBufferCapture(dispatchCompute);
 
     Qt3DRender::QClearBuffers *clearBuffers = new Qt3DRender::QClearBuffers(renderStateSet);
     clearBuffers->setBuffers(Qt3DRender::QClearBuffers::AllBuffers);
@@ -141,14 +148,9 @@ Qt3DCore::QEntity *createScene(Qt3DExtras::Qt3DWindow *graphicsWindow) {
 
     graphicsWindow->setActiveFrameGraph(renderSurfaceSelector);
     graphicsWindow->renderSettings()->pickingSettings()->setPickMethod(Qt3DRender::QPickingSettings::TrianglePicking);
-    graphicsWindow->renderSettings()->pickingSettings()->setPickResultMode(Qt3DRender::QPickingSettings::AllPicks);
+    //graphicsWindow->renderSettings()->pickingSettings()->setPickResultMode(Qt3DRender::QPickingSettings::AllPicks);
     graphicsWindow->renderSettings()->setRenderPolicy(Qt3DRender::QRenderSettings::Always);
     graphicsWindow->camera()->setNearPlane(0.01f);
-
-    QObject::connect(graphicsWindow, &Qt3DExtras::Qt3DWindow::widthChanged,
-                     gizmo, &Qt3DGizmo::setWindowWidth);
-    QObject::connect(graphicsWindow, &Qt3DExtras::Qt3DWindow::heightChanged,
-                     gizmo, &Qt3DGizmo::setWindowHeight);
 
     return root;
 }
@@ -161,7 +163,7 @@ int main(int argc, char *argv[]) {
     QApplication a(argc, argv);
 
     Qt3DExtras::Qt3DWindow *graphicsWindow = new Qt3DExtras::Qt3DWindow();
-    graphicsWindow->camera()->setPosition(QVector3D(1.7, 3, 4));
+    graphicsWindow->camera()->setPosition(QVector3D(7, 3, 6));
     graphicsWindow->camera()->setViewCenter({-0.4, 1, 0});
     Qt3DCore::QEntity *root = createScene(graphicsWindow);
     graphicsWindow->setRootEntity(root);

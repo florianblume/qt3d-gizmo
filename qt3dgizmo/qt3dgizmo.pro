@@ -19,16 +19,23 @@ SOURCES += \
     handle.cpp \
     planetranslationhandle.cpp \
     qt3dgizmo.cpp \
-    rotationhandle.cpp
+    raycomputematerial.cpp \
+    rotationhandle.cpp \
+    transparentobjectpicker.cpp
 
 HEADERS += \
     arrowtranslationhandle.h \
+    constants.h \
     flatmaterial.h \
     handle.h \
+    plane.h \
     planetranslationhandle.h \
     qt3dgizmo.h \
     qt3dgizmo_p.h \
-    rotationhandle.h
+    ray.h \
+    raycomputematerial.h \
+    rotationhandle.h \
+    transparentobjectpicker.h
 
 RESOURCES += \
     shaders.qrc

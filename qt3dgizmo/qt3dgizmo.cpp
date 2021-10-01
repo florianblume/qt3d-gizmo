@@ -17,25 +17,6 @@ Qt3DGizmoPrivate::Qt3DGizmoPrivate() {
 
 }
 
-Ray Qt3DGizmoPrivate::generate3DRayFromScreenToInfinity(int x, int y) {
-    float winZ0 = 0.0f;
-    float winZ1 = 1.0f;
-    int yCorrected = m_windowSize.height() - y;
-
-    QVector3D origin = QVector3D(x, yCorrected, winZ0);
-    QVector3D destination = QVector3D(x, yCorrected, winZ1);
-
-    // TODO is using window size correct here?
-    QVector3D unprojectedOrigin = origin.unproject(m_camera->viewMatrix(),
-                                                   m_camera->projectionMatrix(),
-                                                   QRect(0, 0, m_windowSize.width(), m_windowSize.height()));
-    QVector3D unprojectedDestination = destination.unproject(m_camera->viewMatrix(),
-                                                             m_camera->projectionMatrix(),
-                                                             QRect(0, 0, m_windowSize.width(), m_windowSize.height()));
-
-    return Ray(unprojectedOrigin, unprojectedDestination);
-}
-
 QVector3D Qt3DGizmoPrivate::applyTranslationConstraint(const QVector3D &position, const QVector3D &intersectionPosition,
                                                        Handle::AxisConstraint axisConstraint) {
     QVector3D result = position;
@@ -116,14 +97,21 @@ QVector3D Qt3DGizmoPrivate::computePlaneNormal(const Ray &ray, Handle::AxisConst
 
 void Qt3DGizmoPrivate::initialize(Qt3DRender::QPickEvent *event,
                                   Handle::AxisConstraint axisConstraint) {
+    // TODO: This functionw ill still be called by the handles' pressed signal
+
     // We set this here to true since this function is only called when
     // a handle was pressed and we cannot set it to true in the MouseHandler
     // since then the update function will translate whenever the mouse
     // is pressed anywhere
     m_mouseDownOnHandle = true;
     m_axisConstraint = axisConstraint;
-    m_rayFromClickPosition = generate3DRayFromScreenToInfinity(event->position().x(),
-                                                               event->position().y());
+
+    // But this ray will be retrieved earlier through the compute shader
+    m_rayFromClickPosition = Ray::generate3DRayFromScreenToInfinity(event->position().x(),
+                                                                    event->position().y(),
+                                                                    QSize(600, 600),
+                                                                    m_camera->viewMatrix(),
+                                                                    m_camera->projectionMatrix());
     if (m_currentMode == Qt3DGizmo::Translation) {
         m_translationDisplacement = QVector3D();
         m_plane = initializeTranslationPlane(m_rayFromClickPosition,
@@ -132,7 +120,7 @@ void Qt3DGizmoPrivate::initialize(Qt3DRender::QPickEvent *event,
     } else {
         m_plane = initializeRotationPlane(m_delegateTransform->translation(),
                                           axisConstraint);
-        QPair<int, QVector3D> intersection = m_rayFromClickPosition.intersects(m_plane);
+        QPair<int, QVector3D> intersection = m_rayFromClickPosition.intersectsPlane(m_plane);
         // We cannot store the intersection on the handle directly since it does not necessarily
         // lie directly on the rotation plane (the handles are 3D circles), i.e. we need to
         // project the ray onto the plane and store the intersection minus the plane's position
@@ -143,8 +131,13 @@ void Qt3DGizmoPrivate::initialize(Qt3DRender::QPickEvent *event,
 }
 
 void Qt3DGizmoPrivate::update(int x, int y) {
-    m_rayFromClickPosition = generate3DRayFromScreenToInfinity(x, y);
-    QPair<int, QVector3D> intersection = m_rayFromClickPosition.intersects(m_plane);
+    // Update will be called after receiving the ray from the compute shader and
+    // m_mouseDownOnHanlde is true
+    m_rayFromClickPosition = Ray::generate3DRayFromScreenToInfinity(x, y,
+                                                                    QSize(600, 600),
+                                                                    m_camera->viewMatrix(),
+                                                                    m_camera->projectionMatrix());
+    QPair<int, QVector3D> intersection = m_rayFromClickPosition.intersectsPlane(m_plane);
 
     if (intersection.first == 0) {
         // No intersection
@@ -193,10 +186,11 @@ void Qt3DGizmoPrivate::removeHighlightsFromHanldes() {
 void Qt3DGizmoPrivate::adjustScaleToCameraDistance() {
     if (m_scaleToCameraDistance && m_camera) {
         // TODO Not completely working yet
+        // TODO move to shader
         float reciprScaleOnscreen = 0.05;
         float w = ((m_camera->projectionMatrix() * m_camera->viewMatrix() * m_ownTransform->matrix()) * QVector4D(0, 0, 0, 1)).w();
         w *= reciprScaleOnscreen;
-        m_ownTransform->setScale(m_scale + w);
+        //m_ownTransform->setScale(m_scale + w);
     }
 }
 
@@ -209,10 +203,57 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     , d_ptr(new Qt3DGizmoPrivate) {
     Q_D(Qt3DGizmo);
 
+    d->m_computeMaterial = new RayComputeMaterial;
+    addComponent(d->m_computeMaterial);
+    connect(d->m_computeMaterial, &RayComputeMaterial::rayComputed,
+            this, [](const Ray &ray){
+        qDebug() << ray.start << ray.end;
+    });
+    d->m_computeCommand = new Qt3DRender::QComputeCommand();
+    addComponent(d->m_computeCommand);
+    // Problem is 1D (compute the two rays), i.e. Y and Z must be 1
+    d->m_computeCommand->setWorkGroupX(1);
+    d->m_computeCommand->setWorkGroupY(1);
+    d->m_computeCommand->setWorkGroupZ(1);
+
     d->m_mouseDevice = new Qt3DInput::QMouseDevice(this);
     d->m_mouseHandler = new Qt3DInput::QMouseHandler;
     d->m_mouseHandler->setSourceDevice(d->m_mouseDevice);
     addComponent(d->m_mouseHandler);
+    // TODO Add pressed handler for m_mouseHandler to call initialize method
+    // which uses the compute shader to compute the current ray
+    connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::pressed,
+            this, [d](){
+        // Compute ray using compute shader and pass to handles to check
+        // for intersections -> in case of a hit they have to emit
+        // their pressed signal -> set m_mouseDownOnHandle to true
+    });
+    connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::positionChanged,
+            this, [d](Qt3DInput::QMouseEvent *e){
+        d->m_computeMaterial->setMouseCoordinates(e->x(), e->y());
+        // TODO: Distinguish the cases mouse down on handle and not down
+        // on handle:
+        //      not down: compute ray using compute shader and pass to handles
+        //      down: compute ray using compute shader and call update(x, y)
+        if (!d->m_mouseDownOnHandle) {
+            // Compute ray using compute shader and pass to handles
+            // to handle hovering
+        } else {
+            // Compute ray using compute shader and call update(x, y)
+        }
+
+        // The mouse down flag is set in the initialize function of the private
+        // Qt3DGizmo class through the pressed events fired by the handles
+        if (d->m_mouseDownOnHandle) {
+            if (d->m_hideMouseWhileTransforming && !d->m_currentlyHidingMouse) {
+                QCursor cursor(Qt::BlankCursor);
+                QApplication::setOverrideCursor(cursor);
+                d->m_currentlyHidingMouse = true;
+            }
+            // This does the acual transforming
+            d->update(e->x(), e->y());
+        }
+    });
     connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::released,
             this, [d](){
         d->m_mouseDownOnHandle = false;
@@ -220,17 +261,6 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
         d->m_spherePhongMaterial->setAmbient(QColor(50, 50, 50, 50));
         QApplication::restoreOverrideCursor();
         d->m_currentlyHidingMouse = false;
-    });
-    connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::positionChanged,
-            this, [d](Qt3DInput::QMouseEvent *e){
-        if (d->m_mouseDownOnHandle) {
-            if (d->m_hideMouseWhileTransforming && !d->m_currentlyHidingMouse) {
-                QCursor cursor(Qt::BlankCursor);
-                QApplication::setOverrideCursor(cursor);
-                d->m_currentlyHidingMouse = true;
-            }
-            d->update(e->x(), e->y());
-        }
     });
     connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::exited,
             this, [d](){
@@ -260,9 +290,9 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     connect(d->m_sphereObjectPicker, &Qt3DRender::QObjectPicker::clicked,
             this, [this, d](){
         if (d->m_currentMode == Translation) {
-            this->setMode(Rotation);
+            this->setTransformationMode(Rotation);
         } else {
-            this->setMode(Translation);
+            this->setTransformationMode(Translation);
         }
     });
     connect(d->m_sphereObjectPicker, &Qt3DRender::QObjectPicker::moved,
@@ -346,24 +376,14 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     setScale(d->m_scale);
 }
 
-Qt3DGizmo::Mode Qt3DGizmo::mode() const {
+Qt3DGizmo::TransformationMode Qt3DGizmo::transformationMode() const {
     Q_D(const Qt3DGizmo);
     return d->m_currentMode;
-}
-
-QSize Qt3DGizmo::windowSize() const {
-    Q_D(const Qt3DGizmo);
-    return d->m_windowSize;
 }
 
 Qt3DCore::QTransform *Qt3DGizmo::delegateTransform() const {
     Q_D(const Qt3DGizmo);
     return d->m_delegateTransform;
-}
-
-Qt3DRender::QCamera *Qt3DGizmo::camera() const {
-    Q_D(const Qt3DGizmo);
-    return d->m_camera;
 }
 
 void Qt3DGizmo::setEnabled(bool enabled) {
@@ -401,7 +421,24 @@ bool Qt3DGizmo::flatAppearance() const {
     return d->m_flatAppearance;
 }
 
-void Qt3DGizmo::setMode(Mode mode) {
+void Qt3DGizmo::setDetectFramegraphAutomatically(bool detectFramegraphAutomatically) {
+    Q_D(Qt3DGizmo);
+    if (detectFramegraphAutomatically != d->m_detectFramegraphAutomatically &&
+            detectFramegraphAutomatically) {
+        // Need to re-traverse the framegraph
+    }
+    d->m_detectFramegraphAutomatically = detectFramegraphAutomatically;
+}
+
+void Qt3DGizmo::setCameraViewportSurface(Qt3DRender::QCamera *camera,
+                                         Qt3DRender::QViewport *viewport,
+                                         QSurface *surface) {
+    Q_D(Qt3DGizmo);
+    // TODO mutex --> Proably don't need since we only have one and not multiple anymore
+    d->m_cameraViewportSurfaceTriplet = {camera, viewport, surface};
+}
+
+void Qt3DGizmo::setTransformationMode(TransformationMode mode) {
     // Gets called externally or by clicking the sphere
     Q_D(Qt3DGizmo);
     d->m_currentMode = mode;
@@ -413,24 +450,6 @@ void Qt3DGizmo::setMode(Mode mode) {
     }
     // To update the Gizmo and draw everything in the correct order (some weird bug)
     d->m_spherePhongMaterial->setAmbient(d->m_sphereNormalColor);
-}
-
-void Qt3DGizmo::setWindowSize(const QSize &size) {
-    Q_D(Qt3DGizmo);
-    d->m_windowSize = size;
-    Q_EMIT windowSizeChanged(d->m_windowSize);
-}
-
-void Qt3DGizmo::setWindowWidth(int width) {
-    Q_D(Qt3DGizmo);
-    d->m_windowSize = QSize(width, d->m_windowSize.height());
-    Q_EMIT windowSizeChanged(d->m_windowSize);
-}
-
-void Qt3DGizmo::setWindowHeight(int height) {
-    Q_D(Qt3DGizmo);
-    d->m_windowSize = QSize(d->m_windowSize.width(), height);
-    Q_EMIT windowSizeChanged(d->m_windowSize);
 }
 
 void Qt3DGizmo::setDelegateTransform(Qt3DCore::QTransform *transform) {
@@ -447,28 +466,14 @@ void Qt3DGizmo::setDelegateTransform(Qt3DCore::QTransform *transform) {
                 d->m_delegateTransform, &Qt3DCore::QTransform::translationChanged,
                 d, &Qt3DGizmoPrivate::adjustScaleToCameraDistance);
     d->adjustScaleToCameraDistance();
-    Q_EMIT delegateTransformChanged(transform);
-}
-
-void Qt3DGizmo::setCamera(Qt3DRender::QCamera *camera) {
-    Q_D(Qt3DGizmo);
-    disconnect(d->m_cameraViewMatrixChangedConnection);
-    d->m_camera = camera;
-    d->m_translationHandleX->setCamera(camera);
-    d->m_translationHandleY->setCamera(camera);
-    d->m_translationHandleZ->setCamera(camera);
-    d->m_cameraViewMatrixChangedConnection =
-            connect(camera, &Qt3DRender::QCamera::viewMatrixChanged,
-                    d, &Qt3DGizmoPrivate::adjustScaleToCameraDistance);
-    d->adjustScaleToCameraDistance();
-    Q_EMIT cameraChanged(camera);
+    emit delegateTransformChanged(transform);
 }
 
 void Qt3DGizmo::setScale(float scale) {
     Q_D(Qt3DGizmo);
     d->m_scale = scale;
     d->adjustScaleToCameraDistance();
-    Q_EMIT scaleChanged(scale);
+    emit scaleChanged(scale);
 }
 
 void Qt3DGizmo::setScaleToCameraDistance(bool scaleToCameraDistance) {
@@ -479,7 +484,7 @@ void Qt3DGizmo::setScaleToCameraDistance(bool scaleToCameraDistance) {
     } else {
         d->adjustScaleToCameraDistance();
     }
-    Q_EMIT scaleToCameraDistanceChanged(scaleToCameraDistance);
+    emit scaleToCameraDistanceChanged(scaleToCameraDistance);
 }
 
 void Qt3DGizmo::setHideMouseWhileTransforming(bool hideMouseWhileTransforming) {
@@ -505,5 +510,5 @@ void Qt3DGizmo::setFlatAppearance(bool flatAppearance) {
             d->m_sphereEntity->addComponent(d->m_spherePhongMaterial);
         }
     }
-    Q_EMIT flatAppearanceChanged(flatAppearance);
+    emit flatAppearanceChanged(flatAppearance);
 }

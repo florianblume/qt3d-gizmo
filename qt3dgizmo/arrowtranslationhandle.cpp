@@ -43,8 +43,6 @@ ArrowTranslationHandle::ArrowTranslationHandle(Qt3DCore::QNode *parent,AxisConst
     m_labelEntity->setWidth(5);
     m_labelEntity->setHeight(5);
     m_labelEntityTransform->setScale(0.07);
-
-    qDebug() << label << this->id() << m_coneEntity->id() << m_cylinderEntity->id();
 }
 
 

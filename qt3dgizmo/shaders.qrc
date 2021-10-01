@@ -2,5 +2,6 @@
     <qresource prefix="/">
         <file>gizmo.frag</file>
         <file>gizmo.vert</file>
+        <file>compute_ray.vert</file>
     </qresource>
 </RCC>

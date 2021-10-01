@@ -8,26 +8,28 @@
 #include <Qt3DCore/QNode>
 #include <Qt3DCore/QTransform>
 #include <Qt3DRender/QCamera>
+#include <Qt3DRender/QViewport>
+#include <QSurface>
 
 class Qt3DGizmoPrivate;
 
 class Qt3DGizmo : public Qt3DCore::QEntity {
 
 public:
-    enum Mode {
+    enum TransformationMode {
         Translation,
         Rotation
     };
 
     Q_OBJECT
 
-    Q_PROPERTY(Mode mode READ mode WRITE setMode NOTIFY modeChanged)
-    Q_PROPERTY(QSize windowSize READ windowSize WRITE setWindowSize NOTIFY windowSizeChanged)
-    Q_PROPERTY(Qt3DCore::QTransform* delegateTransform READ delegateTransform WRITE setDelegateTransform NOTIFY delegateTransformChanged)
-    Q_PROPERTY(Qt3DRender::QCamera *camera READ camera WRITE setCamera NOTIFY cameraChanged)
+    Q_PROPERTY(TransformationMode transformationMode READ transformationMode WRITE setTransformationMode NOTIFY transformationModeChanged)
+    Q_PROPERTY(Qt3DCore::QTransform* delegateTransform READ delegateTransform WRITE
+               setDelegateTransform NOTIFY delegateTransformChanged)
 
     Q_PROPERTY(float scale READ scale WRITE setScale NOTIFY scaleChanged)
-    Q_PROPERTY(bool scaleToCameraDistance READ scaleToCameraDistance WRITE setScaleToCameraDistance NOTIFY scaleToCameraDistanceChanged)
+    Q_PROPERTY(bool scaleToCameraDistance READ scaleToCameraDistance WRITE
+               setScaleToCameraDistance NOTIFY scaleToCameraDistanceChanged)
     Q_PROPERTY(bool hideMouseWhileTransforming READ hideMouseWhileTransforming
                WRITE setHideMouseWhileTransforming NOTIFY hideMouseWhileTransformingChanged)
     Q_PROPERTY(bool flatAppearance READ flatAppearance WRITE setFlatAppearance NOTIFY flatAppearanceChanged)
@@ -60,40 +62,34 @@ public:
     // TODO show rotation handles
     // TODO show only active handles
 
-    Q_ENUM(Mode)
+    Q_ENUM(TransformationMode)
 
 public:
     explicit Qt3DGizmo(Qt3DCore::QNode *parent = nullptr);
-    Mode mode() const;
-    QSize windowSize() const;
-    Qt3DCore::QTransform *delegateTransform() const;
-    Qt3DRender::QCamera *camera() const;
+    Q_INVOKABLE TransformationMode transformationMode() const;
+    Q_INVOKABLE Qt3DCore::QTransform *delegateTransform() const;
+
+    Q_INVOKABLE float scale() const;
+    Q_INVOKABLE bool scaleToCameraDistance() const;
+    Q_INVOKABLE bool hideMouseWhileTransforming() const;
+    Q_INVOKABLE bool flatAppearance() const;
+
+public slots:
     void setEnabled(bool enabled);
-
-    float scale() const;
-    bool scaleToCameraDistance() const;
-    bool hideMouseWhileTransforming() const;
-    bool flatAppearance() const;
-
-public Q_SLOTS:
-    void setMode(Qt3DGizmo::Mode mode);
-    void setWindowSize(const QSize &size);
-    void setWindowWidth(int width);
-    void setWindowHeight(int height);
+    void setDetectFramegraphAutomatically(bool detectFramegraphAutomatically);
+    void setCameraViewportSurface(Qt3DRender::QCamera *camera,
+                                  Qt3DRender::QViewport *viewport,
+                                  QSurface *surface);
+    void setTransformationMode(Qt3DGizmo::TransformationMode mode);
     void setDelegateTransform(Qt3DCore::QTransform *transform);
-    void setCamera(Qt3DRender::QCamera *camera);
-
     void setScale(float scale);
     void setScaleToCameraDistance(bool scaleToCameraDistance);
     void setHideMouseWhileTransforming(bool hideMouseWhileTransforming);
     void setFlatAppearance(bool flatAppearance);
 
-Q_SIGNALS:
-    void modeChanged(Mode mode);
-    void windowSizeChanged(const QSize &size);
+signals:
+    void transformationModeChanged(TransformationMode mode);
     void delegateTransformChanged(Qt3DCore::QTransform *transform);
-    void cameraChanged(Qt3DRender::QCamera *camera);
-
     void scaleChanged(float scale);
     void scaleToCameraDistanceChanged(bool scaleToCameraDistance);
     void hideMouseWhileTransformingChanged(bool hideMouseWhileTransforming);

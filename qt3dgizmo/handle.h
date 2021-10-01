@@ -2,6 +2,7 @@
 #define HANDLE_H
 
 #include "flatmaterial.h"
+#include "transparentobjectpicker.h"
 
 #include <QObject>
 #include <QColor>
@@ -34,8 +35,11 @@ public:
     Qt3DCore::QTransform *transform() const;
     AxisConstraint axisConstraint();
 
-public Q_SLOTS:
+public slots:
+    // Need to invert text rotation on arrow handles
     void setCamera(Qt3DRender::QCamera *camera);
+    // Needed for our manual picking
+    void setWindowSize(const QSize &windowSize);
     void setColor(const QColor &color);
     void setHighlightColor(const QColor &color);
     void setHighlightOnHover(bool highlightOnHover);
@@ -43,10 +47,10 @@ public Q_SLOTS:
     void setFlatAppearance(bool flatAppearance);
     virtual void setEnabled(bool enabled);
 
-Q_SIGNALS:
+signals:
     void pressed(Qt3DRender::QPickEvent *event, AxisConstraint constraint);
 
-private Q_SLOTS:
+private slots:
     void onMoved();
     void onExited();
     void onPressed(Qt3DRender::QPickEvent *event);
@@ -60,10 +64,11 @@ protected:
     QColor m_color;
     QColor m_highlightColor;
     Qt3DRender::QCamera *m_camera;
+    QSize m_windowSize;
     bool m_highlightOnHover;
     bool m_isDragged;
     Qt3DCore::QTransform *m_transform;
-    Qt3DRender::QObjectPicker *m_picker;
+    TransparentObjectPicker *m_picker;
     FlatMaterial *m_flatMaterial;
     Qt3DExtras::QPhongMaterial *m_phongMaterial;
     bool m_flatAppearance = true;

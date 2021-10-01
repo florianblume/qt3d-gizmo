@@ -17,10 +17,10 @@ public:
     ArrowTranslationHandle(Qt3DCore::QNode *parent, AxisConstraint constraint, const QVector3D &position,
                            const QString &label, const QColor &color);
 
-public Q_SLOTS:
+public slots:
     void setLabel(const QString &label);
 
-public Q_SLOTS:
+public slots:
     void invertTextRotation(const QMatrix4x4 &viewMatix);
     void setCamera(Qt3DRender::QCamera *camera);
     void setColor(const QColor &color);
@@ -46,7 +46,7 @@ private:
     // We need to store this transform to invert the camera rotation
     Qt3DCore::QTransform *m_labelEntityTransform;
 
-    QObject *m_cameraConnectionContext = Q_NULLPTR;
+    QObject *m_cameraConnectionContext = nullptr;
 };
 
 #endif // ARROWTRANSLATIONHANDLE_H

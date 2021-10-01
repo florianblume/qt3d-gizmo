@@ -2,9 +2,13 @@
 #define QT3DGIZMO_P_H
 
 #include "qt3dgizmo.h"
+#include "plane.h"
+#include "ray.h"
+#include "constants.h"
 #include "rotationhandle.h"
 #include "arrowtranslationhandle.h"
 #include "planetranslationhandle.h"
+#include "raycomputematerial.h"
 
 #include <QVector3D>
 #include <QList>
@@ -16,82 +20,30 @@
 #include <Qt3DCore/QTransform>
 #include <Qt3DRender/QCamera>
 #include <Qt3DCore/QEntity>
+#include <Qt3DRender/QRenderSurfaceSelector>
 #include <Qt3DExtras/QPhongMaterial>
 #include <Qt3DExtras/QSphereMesh>
 #include <Qt3DRender/QViewport>
 #include <Qt3DInput/QMouseDevice>
 #include <Qt3DInput/QMouseHandler>
-
-#define EPSILON 2.5e-8
-
-class Plane {
-
-public:
-    Plane() {
-    }
-
-    Plane(const QVector3D &position, const QVector3D &normal) {
-        this->position = position;
-        this->normal = normal;
-    }
-
-    // TODO ATTENTION! This is OpenGL normal with y being up and down
-    QVector3D normal = QVector3D(0.f, 1.f, 0.f);
-    QVector3D position;
-};
-
-class Ray {
-
-public:
-    Ray() {
-    }
-
-    Ray(const QVector3D &start, const QVector3D &end)
-        : start(start), end(end) {
-    }
-
-    QPair<int, QVector3D> intersects(const Plane &plane) const {
-        int result = 0;
-
-        QVector3D intersectPoint;
-
-        QVector3D u = start - end;
-        QVector3D w = start - plane.position;
-
-        float     D = QVector3D::dotProduct(plane.normal, u);
-        float     N = -QVector3D::dotProduct(plane.normal, w);
-
-        if (qAbs(D) < EPSILON)		   // segment is parallel to plane
-        {
-            if (N == 0)                // segment lies in plane
-                result = 2;
-            else
-                result = 0;            // no intersection
-        }
-
-        float s = N / D;
-        if (s < 0 || s > 1)
-            result = 0;                 // no intersection
-
-        intersectPoint = start + u * s; // compute segment intersect point
-
-        result = 1;
-        return qMakePair(result, intersectPoint);
-    }
-
-    QVector3D start;
-    QVector3D end;
-};
+#include <Qt3DRender/QGeometryRenderer>
+#include <Qt3DRender/QComputeCommand>
 
 class Qt3DGizmoPrivate : public QObject {
 
 public:
+    // Struct to store triplets of camera, viewport, surface
+    // since we need all three for ray casting
+    struct CameraViewportSurface {
+        Qt3DRender::QCamera *camera;
+        Qt3DRender::QViewport *viewport;
+        QSurface *surface;
+    };
+
     Qt3DGizmoPrivate();
 
     Q_DECLARE_PUBLIC(Qt3DGizmo)
 
-    // Not static since we need the camera matrices
-    Ray generate3DRayFromScreenToInfinity(int x, int y);
     static Plane initializeTranslationPlane(const Ray &clickRay, const QVector3D &position,
                                             Handle::AxisConstraint translationConstraint);
     static Plane initializeRotationPlane(const QVector3D &position,
@@ -111,12 +63,12 @@ public:
     bool m_currentlyHidingMouse = false;
     bool m_flatAppearance = true;
 
-    Qt3DGizmo::Mode m_currentMode = Qt3DGizmo::Mode::Translation;
+    Qt3DGizmo::TransformationMode m_currentMode = Qt3DGizmo::TransformationMode::Translation;
 
-    QSize m_windowSize;
+    CameraViewportSurface m_cameraViewportSurfaceTriplet;
+    bool m_detectFramegraphAutomatically = false;
 
     Handle::AxisConstraint m_axisConstraint;
-
 
     bool m_mouseDownOnHandle = false;
 
@@ -131,18 +83,26 @@ public:
     // Rotation before the user starts rotating
     QQuaternion m_initialOrientation;
 
+    // To handle mouse movement and clicks
+    // Events will be delegated to the compute material
+    // and the resulting ray to the handles
     Qt3DInput::QMouseDevice *m_mouseDevice;
     Qt3DInput::QMouseHandler *m_mouseHandler;
+    RayComputeMaterial *m_computeMaterial;
+    Qt3DRender::QComputeCommand *m_computeCommand;
 
     Qt3DCore::QTransform *m_delegateTransform;
     Qt3DCore::QTransform *m_ownTransform;
     QMetaObject::Connection m_delegateTransformTranslationChangedConnection;
+    // Probably don't need this anymore since we'll take care of scaling
+    // in the shaders to account for different viewports and different cameras
     QMetaObject::Connection m_delegateTransformAdjustScaleConnection;
 
     QMetaObject::Connection m_cameraViewMatrixChangedConnection;
-    Qt3DRender::QCamera *m_camera = Q_NULLPTR;
+    Qt3DRender::QCamera *m_camera = nullptr;
     Qt3DRender::QViewport *m_viewport;
 
+    // TODO Put in own class to make it work with new approach
     // Sphere to switch modes
     float m_sphereHighlightScale = 1.4f;
     Qt3DCore::QEntity *m_sphereEntity;
@@ -166,7 +126,7 @@ public:
     RotationHandle *m_rotationHandleZ;
     QList<Handle*> m_rotationHandles;
 
-public Q_SLOTS:
+public slots:
     void onMouseRelease();
 
 private:

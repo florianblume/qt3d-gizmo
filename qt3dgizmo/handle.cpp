@@ -8,17 +8,15 @@ Handle::Handle(Qt3DCore::QNode *parent, AxisConstraint constraint, const QVector
     , m_axisConstraint(constraint)
     , m_color(color)
     , m_transform(new Qt3DCore::QTransform)
-    , m_picker(new Qt3DRender::QObjectPicker) {
+    , m_picker(new TransparentObjectPicker) {
     addComponent(m_transform);
     m_transform->setTranslation(position);
-    m_picker->setDragEnabled(true);
-    m_picker->setHoverEnabled(true);
     addComponent(m_picker);
-    connect(m_picker, &Qt3DRender::QObjectPicker::moved,
+    connect(m_picker, &TransparentObjectPicker::moved,
             this, &Handle::onMoved);
-    connect(m_picker, &Qt3DRender::QObjectPicker::exited,
+    connect(m_picker, &TransparentObjectPicker::exited,
             this, &Handle::onExited);
-    connect(m_picker, &Qt3DRender::QObjectPicker::pressed,
+    connect(m_picker, &TransparentObjectPicker::pressed,
             this, &Handle::onPressed);
 
     // For the subclasses to add
@@ -32,7 +30,6 @@ Handle::Handle(Qt3DCore::QNode *parent, AxisConstraint constraint, const QVector
     m_highlightColor = QColor(255, 255, 180);
     m_highlightOnHover = true;
     m_isDragged = false;
-    qDebug() << "handle" << this->id();
 }
 
 void Handle::onMoved() {
@@ -70,6 +67,11 @@ void Handle::setHighlighted(bool highlighted) {
 
 void Handle::setCamera(Qt3DRender::QCamera *camera) {
     m_camera = camera;
+}
+
+void Handle::setWindowSize(const QSize &windowSize) {
+    // TODO pass window size to transparent object picker
+    m_windowSize = windowSize;
 }
 
 void Handle::setColor(const QColor &color) {
