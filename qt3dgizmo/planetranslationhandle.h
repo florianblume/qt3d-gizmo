@@ -1,12 +1,12 @@
 #ifndef PLANETRANSLATIONHANDLE_H
 #define PLANETRANSLATIONHANDLE_H
 
-#include "handle.h"
+#include "transformhandle.h"
 #include <QObject>
 
 #include <Qt3DExtras/QPlaneMesh>
 
-class PlaneTranslationHandle : public Handle {
+class PlaneTranslationHandle : public TransformHandle {
 
     Q_OBJECT
 

@@ -2,6 +2,7 @@
     <qresource prefix="/">
         <file>gizmo.frag</file>
         <file>gizmo.vert</file>
-        <file>compute_ray.vert</file>
+        <file>compute_ray.comp</file>
+        <file>intersect_ray.comp</file>
     </qresource>
 </RCC>

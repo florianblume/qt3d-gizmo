@@ -69,7 +69,7 @@ public:
         return qMakePair(result, intersectPoint);
     }
 
-    inline bool intersectsBoundingBox(const QVector3D &minExtent, const QVector3D &maxExtent) {
+    inline bool intersectsBoundingBox(const QVector3D &minExtent, const QVector3D &maxExtent) const {
         // Adapted from https://gamedev.stackexchange.com/a/18459
 
         // unit direction vector of ray
@@ -101,7 +101,7 @@ public:
 
     inline QPair<bool, QVector3D>  intersectsTriangle(const QVector3D &a,
                                                       const QVector3D &b,
-                                                      const QVector3D &c) {
+                                                      const QVector3D &c) const {
         // Qt3D's internal triangle intersection procedure
         const QVector3D ab = b - a;
         const QVector3D ac = c - a;

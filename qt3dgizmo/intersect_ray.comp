@@ -1,0 +1,74 @@
+#version 430 core
+
+// Simply do all in one call
+layout (local_size_x=128) in;
+
+layout (std430, binding = 1) buffer result {
+    vec3 worldIntersection;
+    bool hit;
+};
+
+layout (std430, binding = 1) buffer triangleBuffer {
+    vec3 triangles[];
+};
+
+// These are automatically provided by Qt3D
+uniform mat4 modelMatrix;
+uniform mat4 projectionMatrix;
+uniform mat4 viewMatrix;
+uniform mat4 viewportMatrix;
+uniform vec3 eyePosition;
+
+// The current mouse coordinates we need a ray for
+uniform vec3 rayStart;
+uniform vec3 rayEnd;
+
+struct Viewport {
+    int width;
+    int height;
+};
+
+void main(void) {
+    /*
+    // Qt3D's internal triangle intersection procedure
+    const QVector3D ab = b - a;
+    const QVector3D ac = c - a;
+    const QVector3D qp = (start - end);
+
+    const QVector3D n = QVector3D::crossProduct(ab, ac);
+    const float d = QVector3D::dotProduct(qp, n);
+
+    if (d <= 0.0f)
+        return qMakePair(false, QVector3D());
+
+    const QVector3D ap = start - a;
+    float t = QVector3D::dotProduct(ap, n);
+
+    if (t < 0.0f || t > d)
+        return qMakePair(false, QVector3D());
+
+    const QVector3D e = QVector3D::crossProduct(qp, ap);
+    QVector3D uvw;
+    uvw.setY(QVector3D::dotProduct(ac, e));
+
+    if (uvw.y() < 0.0f || uvw.y() > d)
+        return qMakePair(false, QVector3D());
+
+    uvw.setZ(-QVector3D::dotProduct(ab, e));
+
+    if (uvw.z() < 0.0f || uvw.y() + uvw.z() > d)
+        return qMakePair(false, QVector3D());
+
+    const float ood = 1.0f / d;
+    t *= ood;
+    uvw.setY(uvw.y() * ood);
+    uvw.setZ(uvw.z() * ood);
+    uvw.setX(1.0f - uvw.y() - uvw.z());
+
+    QVector3D intersection = start + t * (end - start);
+
+    // Return global intersection
+    return qMakePair(true, intersection);
+    */
+
+}

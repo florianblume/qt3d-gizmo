@@ -9,6 +9,7 @@
 #include "arrowtranslationhandle.h"
 #include "planetranslationhandle.h"
 #include "raycomputematerial.h"
+#include "modeswitcherhandle.h"
 
 #include <QVector3D>
 #include <QList>
@@ -52,7 +53,8 @@ public:
     QVector3D applyTranslationConstraint(const QVector3D &position, const QVector3D &intersectionPosition,
                                          Handle::AxisConstraint translationConstraint);
     void initialize(Qt3DRender::QPickEvent *event, Handle::AxisConstraint axisConstraint);
-    void update(int x, int y);
+    void updateMouseCoordinates(int x, int y);
+    void updateTransform(int x, int y);
     void removeHighlightsFromHanldes();
     void adjustScaleToCameraDistance();
 
@@ -102,16 +104,9 @@ public:
     Qt3DRender::QCamera *m_camera = nullptr;
     Qt3DRender::QViewport *m_viewport;
 
-    // TODO Put in own class to make it work with new approach
-    // Sphere to switch modes
-    float m_sphereHighlightScale = 1.4f;
-    Qt3DCore::QEntity *m_sphereEntity;
-    Qt3DExtras::QPhongMaterial *m_spherePhongMaterial;
-    FlatMaterial *m_sphereFlatMaterial;
-    QColor m_sphereNormalColor = QColor(50, 50, 50, 50);
-    Qt3DExtras::QSphereMesh *m_sphereMesh;
-    Qt3DRender::QObjectPicker *m_sphereObjectPicker;
-    Qt3DCore::QTransform *m_sphereTransform;
+    QList<Handle*> m_handles;
+
+    ModeSwitcherHandle *m_modeSwitcherHandle;
 
     ArrowTranslationHandle *m_translationHandleX;
     ArrowTranslationHandle *m_translationHandleY;

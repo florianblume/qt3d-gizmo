@@ -106,12 +106,6 @@ void Qt3DGizmoPrivate::initialize(Qt3DRender::QPickEvent *event,
     m_mouseDownOnHandle = true;
     m_axisConstraint = axisConstraint;
 
-    // But this ray will be retrieved earlier through the compute shader
-    m_rayFromClickPosition = Ray::generate3DRayFromScreenToInfinity(event->position().x(),
-                                                                    event->position().y(),
-                                                                    QSize(600, 600),
-                                                                    m_camera->viewMatrix(),
-                                                                    m_camera->projectionMatrix());
     if (m_currentMode == Qt3DGizmo::Translation) {
         m_translationDisplacement = QVector3D();
         m_plane = initializeTranslationPlane(m_rayFromClickPosition,
@@ -130,13 +124,13 @@ void Qt3DGizmoPrivate::initialize(Qt3DRender::QPickEvent *event,
     }
 }
 
-void Qt3DGizmoPrivate::update(int x, int y) {
+void Qt3DGizmoPrivate::updateMouseCoordinates(int x, int y) {
+}
+
+void Qt3DGizmoPrivate::updateTransform(int x, int y) {
     // Update will be called after receiving the ray from the compute shader and
     // m_mouseDownOnHanlde is true
-    m_rayFromClickPosition = Ray::generate3DRayFromScreenToInfinity(x, y,
-                                                                    QSize(600, 600),
-                                                                    m_camera->viewMatrix(),
-                                                                    m_camera->projectionMatrix());
+
     QPair<int, QVector3D> intersection = m_rayFromClickPosition.intersectsPlane(m_plane);
 
     if (intersection.first == 0) {
@@ -175,11 +169,8 @@ void Qt3DGizmoPrivate::update(int x, int y) {
 }
 
 void Qt3DGizmoPrivate::removeHighlightsFromHanldes() {
-    for (Handle *handle : m_translationHandles) {
-        handle->setIsDragged(false);
-    }
-    for (Handle *handle : m_rotationHandles) {
-        handle->setIsDragged(false);
+    for (Handle *handle : m_handles) {
+        handle->setHighlighted(false);
     }
 }
 
@@ -206,10 +197,13 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     d->m_computeMaterial = new RayComputeMaterial;
     addComponent(d->m_computeMaterial);
     connect(d->m_computeMaterial, &RayComputeMaterial::rayComputed,
-            this, [](const Ray &ray){
-        qDebug() << ray.start << ray.end;
+            this, [d](const Ray &ray){
+        // Tell the rest of the program that we are still computing a ray,
+        // this happens very rarely
+        d->m_rayFromClickPosition = ray;
     });
     d->m_computeCommand = new Qt3DRender::QComputeCommand();
+    d->m_computeCommand->setRunType(Qt3DRender::QComputeCommand::Continuous);
     addComponent(d->m_computeCommand);
     // Problem is 1D (compute the two rays), i.e. Y and Z must be 1
     d->m_computeCommand->setWorkGroupX(1);
@@ -224,22 +218,24 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     // which uses the compute shader to compute the current ray
     connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::pressed,
             this, [d](){
-        // Compute ray using compute shader and pass to handles to check
-        // for intersections -> in case of a hit they have to emit
-        // their pressed signal -> set m_mouseDownOnHandle to true
+        // Pressed happens after we upload the new mouse coordinates
+        // and receive the resulting ray from the compute shader
+        // During mouse movement we look for intersections and store
+        // any. Then in this function we simply set m_mouseDownOnHandle to true
     });
     connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::positionChanged,
             this, [d](Qt3DInput::QMouseEvent *e){
         d->m_computeMaterial->setMouseCoordinates(e->x(), e->y());
-        // TODO: Distinguish the cases mouse down on handle and not down
-        // on handle:
-        //      not down: compute ray using compute shader and pass to handles
-        //      down: compute ray using compute shader and call update(x, y)
         if (!d->m_mouseDownOnHandle) {
-            // Compute ray using compute shader and pass to handles
-            // to handle hovering
-        } else {
-            // Compute ray using compute shader and call update(x, y)
+            // Iterate over handles and check for intersections and store any
+            // We might not have the ray ready here yet but during the next
+            // mouse movement it will have been computed
+            for (int i = 0; i < d->m_handles.size(); i++) {
+                QPair<bool, QVector3D> result = d->m_handles[i]->intersectionWithRay(d->m_rayFromClickPosition);
+                d->m_handles[i]->setHighlighted(result.first);
+                if (result.first) {
+                }
+            }
         }
 
         // The mouse down flag is set in the initialize function of the private
@@ -251,14 +247,13 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
                 d->m_currentlyHidingMouse = true;
             }
             // This does the acual transforming
-            d->update(e->x(), e->y());
+            d->updateMouseCoordinates(e->x(), e->y());
         }
     });
     connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::released,
             this, [d](){
         d->m_mouseDownOnHandle = false;
         d->removeHighlightsFromHanldes();
-        d->m_spherePhongMaterial->setAmbient(QColor(50, 50, 50, 50));
         QApplication::restoreOverrideCursor();
         d->m_currentlyHidingMouse = false;
     });
@@ -272,62 +267,25 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     d->m_ownTransform = new Qt3DCore::QTransform;
     addComponent(d->m_ownTransform);
 
-    d->m_sphereEntity = new Qt3DCore::QEntity(this);
-    d->m_spherePhongMaterial = new Qt3DExtras::QPhongMaterial;
-    d->m_spherePhongMaterial->setAmbient(d->m_sphereNormalColor);
-    d->m_spherePhongMaterial->setShininess(0.0f);
-    d->m_sphereFlatMaterial = new FlatMaterial;
-    d->m_sphereFlatMaterial->setColor(d->m_sphereNormalColor);
-    d->m_sphereMesh = new Qt3DExtras::QSphereMesh;
-    d->m_sphereMesh->setRadius(0.05);
-    d->m_sphereMesh->setRings(50);
-    d->m_sphereMesh->setSlices(50);
-    d->m_sphereObjectPicker = new Qt3DRender::QObjectPicker;
-    d->m_sphereObjectPicker->setDragEnabled(true);
-    d->m_sphereObjectPicker->setHoverEnabled(true);
-
-    // TODO move to own methods instead of lambdas
-    connect(d->m_sphereObjectPicker, &Qt3DRender::QObjectPicker::clicked,
-            this, [this, d](){
-        if (d->m_currentMode == Translation) {
-            this->setTransformationMode(Rotation);
-        } else {
-            this->setTransformationMode(Translation);
-        }
-    });
-    connect(d->m_sphereObjectPicker, &Qt3DRender::QObjectPicker::moved,
-            this, [d](){
-        d->m_spherePhongMaterial->setAmbient(d->m_handleHighlightColor);
-        d->m_sphereFlatMaterial->setColor(d->m_handleHighlightColor);
-    });
-    connect(d->m_sphereObjectPicker, &Qt3DRender::QObjectPicker::exited,
-            this, [d](){
-        d->m_spherePhongMaterial->setAmbient(d->m_sphereNormalColor);
-        d->m_sphereFlatMaterial->setColor(d->m_sphereNormalColor);
-    });
-
-    d->m_sphereTransform = new Qt3DCore::QTransform;
-    d->m_sphereEntity->addComponent(d->m_sphereFlatMaterial);
-    d->m_sphereEntity->addComponent(d->m_sphereMesh);
-    d->m_sphereEntity->addComponent(d->m_sphereObjectPicker);
-    d->m_sphereEntity->addComponent(d->m_sphereTransform);
-
     QColor red = QColor(220, 50, 100);
     QColor green = QColor(50, 220, 100);
     QColor blue = QColor(50, 100, 220);
     QColor yellow = QColor(220, 220, 80);
+    QColor gray = QColor(80, 80, 80);
 
-    d->m_translationHandleX = new ArrowTranslationHandle(this, Handle::XTrans, {0, 0, 0}, "x", blue);
+    d->m_modeSwitcherHandle = new ModeSwitcherHandle(this, {0, 0, 0}, gray);
+
+    d->m_translationHandleX = new ArrowTranslationHandle(this, Handle::XTrans, {0, 0, 0}, blue);
     d->m_translationHandleX->transform()->setRotationZ(-90);
     connect(d->m_translationHandleX, &Handle::pressed,
             d, &Qt3DGizmoPrivate::initialize);
 
-    d->m_translationHandleY = new ArrowTranslationHandle(this, Handle::YTrans, {0, 0, 0}, "y", green);
+    d->m_translationHandleY = new ArrowTranslationHandle(this, Handle::YTrans, {0, 0, 0}, green);
     d->m_translationHandles.append(d->m_translationHandleY);
     connect(d->m_translationHandleY, &Handle::pressed,
             d, &Qt3DGizmoPrivate::initialize);
 
-    d->m_translationHandleZ = new ArrowTranslationHandle(this, Handle::ZTrans, {0, 0, 0}, "z", red);
+    d->m_translationHandleZ = new ArrowTranslationHandle(this, Handle::ZTrans, {0, 0, 0}, red);
     d->m_translationHandleZ->transform()->setRotationX(90);
     connect(d->m_translationHandleZ, &Handle::pressed,
             d, &Qt3DGizmoPrivate::initialize);
@@ -369,9 +327,14 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
                                  d->m_rotationHandleY,
                                  d->m_rotationHandleZ});
 
+    d->m_handles.append(d->m_modeSwitcherHandle);
+    d->m_handles.append(d->m_translationHandles);
+    d->m_handles.append(d->m_rotationHandles);
+
     for (int i = 0; i < d->m_rotationHandles.size(); i++) {
         d->m_rotationHandles[i]->setEnabled(false);
     }
+
     setEnabled(false);
     setScale(d->m_scale);
 }
@@ -388,6 +351,7 @@ Qt3DCore::QTransform *Qt3DGizmo::delegateTransform() const {
 
 void Qt3DGizmo::setEnabled(bool enabled) {
     Q_D(const Qt3DGizmo);
+    // Check which mode we were in and enable the respective handles
     if (d->m_currentMode == Translation) {
         for (int i = 0; i < d->m_translationHandles.size(); i++) {
             d->m_translationHandles[i]->setEnabled(enabled);
@@ -397,8 +361,7 @@ void Qt3DGizmo::setEnabled(bool enabled) {
             d->m_rotationHandles[i]->setEnabled(enabled);
         }
     }
-    d->m_spherePhongMaterial->setEnabled(enabled);
-    d->m_sphereFlatMaterial->setEnabled(enabled);
+    d->m_modeSwitcherHandle->setEnabled(enabled);
 }
 
 float Qt3DGizmo::scale() const {
@@ -448,8 +411,6 @@ void Qt3DGizmo::setTransformationMode(TransformationMode mode) {
     for (int i = 0; i < d->m_rotationHandles.size(); i++) {
         d->m_rotationHandles[i]->setEnabled(mode == Rotation);
     }
-    // To update the Gizmo and draw everything in the correct order (some weird bug)
-    d->m_spherePhongMaterial->setAmbient(d->m_sphereNormalColor);
 }
 
 void Qt3DGizmo::setDelegateTransform(Qt3DCore::QTransform *transform) {
@@ -496,18 +457,8 @@ void Qt3DGizmo::setFlatAppearance(bool flatAppearance) {
     Q_D(Qt3DGizmo);
     if (d->m_flatAppearance != flatAppearance) {
         d->m_flatAppearance = flatAppearance;
-        for (int i = 0; i < d->m_translationHandles.size(); i++) {
-            d->m_translationHandles[i]->setFlatAppearance(flatAppearance);
-        }
-        for (int i = 0; i < d->m_rotationHandles.size(); i++) {
-            d->m_rotationHandles[i]->setFlatAppearance(flatAppearance);
-        }
-        if (flatAppearance) {
-            d->m_sphereEntity->removeComponent(d->m_spherePhongMaterial);
-            d->m_sphereEntity->addComponent(d->m_sphereFlatMaterial);
-        } else {
-            d->m_sphereEntity->removeComponent(d->m_sphereFlatMaterial);
-            d->m_sphereEntity->addComponent(d->m_spherePhongMaterial);
+        for (int i = 0; i < d->m_handles.size(); i++) {
+            d->m_handles[i]->setFlatAppearance(flatAppearance);
         }
     }
     emit flatAppearanceChanged(flatAppearance);

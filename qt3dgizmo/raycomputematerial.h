@@ -30,6 +30,7 @@ private:
     Qt3DRender::QParameter *m_mouseXParameter;
     Qt3DRender::QParameter *m_mouseYParameter;
     Qt3DRender::QParameter *m_rayBufferParameter;
+    Qt3DRender::QParameter *m_requestComputeParameter;
     Qt3DRender::QShaderProgram *m_shaderProgram;
     Qt3DRender::QEffect *m_effect;
     Qt3DRender::QTechnique *m_technique;

@@ -3,9 +3,11 @@
 
 #include "flatmaterial.h"
 #include "transparentobjectpicker.h"
+#include "ray.h"
 
 #include <QObject>
 #include <QColor>
+#include <QPair>
 
 #include <Qt3DCore/QEntity>
 #include <Qt3DCore/QTransform>
@@ -17,6 +19,11 @@
 class Handle : public Qt3DCore::QEntity {
 
 public:
+    enum Type {
+        Transform,
+        ModeSwitcher
+    };
+
     enum AxisConstraint {
         XTrans,
         YTrans,
@@ -31,42 +38,27 @@ public:
     Q_OBJECT
 
 public:
-    Handle(Qt3DCore::QNode *parent, AxisConstraint constraint, const QVector3D &position, const QColor &color);
+    Handle(Qt3DCore::QNode *parent, const QVector3D &position, const QColor &color);
     Qt3DCore::QTransform *transform() const;
-    AxisConstraint axisConstraint();
 
 public slots:
-    // Need to invert text rotation on arrow handles
-    void setCamera(Qt3DRender::QCamera *camera);
-    // Needed for our manual picking
-    void setWindowSize(const QSize &windowSize);
     void setColor(const QColor &color);
     void setHighlightColor(const QColor &color);
-    void setHighlightOnHover(bool highlightOnHover);
-    void setIsDragged(bool isDragged);
     void setFlatAppearance(bool flatAppearance);
     virtual void setEnabled(bool enabled);
+    QPair<bool, QVector3D> intersectionWithRay(const Ray &ray);
+    void setHighlighted(bool highlighted);
 
 signals:
     void pressed(Qt3DRender::QPickEvent *event, AxisConstraint constraint);
 
-private slots:
-    void onMoved();
-    void onExited();
-    void onPressed(Qt3DRender::QPickEvent *event);
-    void onReleased();
 protected:
-    void setHighlighted(bool highlighted);
     virtual void handleAppearanceChange() = 0;
 
 protected:
-    AxisConstraint m_axisConstraint;
+    bool m_enabled = true;
     QColor m_color;
     QColor m_highlightColor;
-    Qt3DRender::QCamera *m_camera;
-    QSize m_windowSize;
-    bool m_highlightOnHover;
-    bool m_isDragged;
     Qt3DCore::QTransform *m_transform;
     TransparentObjectPicker *m_picker;
     FlatMaterial *m_flatMaterial;

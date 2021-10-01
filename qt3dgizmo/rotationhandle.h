@@ -1,14 +1,14 @@
 #ifndef ROTATIONHANDLE_H
 #define ROTATIONHANDLE_H
 
-#include "handle.h"
+#include "transformhandle.h"
 
 #include <QObject>
 
 #include <Qt3DExtras/QTorusMesh>
 #include <Qt3DExtras/QPhongMaterial>
 
-class RotationHandle : public Handle {
+class RotationHandle : public TransformHandle {
 
     Q_OBJECT
 

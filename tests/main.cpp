@@ -66,7 +66,7 @@ Qt3DCore::QEntity *createScene(Qt3DExtras::Qt3DWindow *graphicsWindow) {
     Qt3DExtras::QPhongMaterial *torusMaterial = new Qt3DExtras::QPhongMaterial();
     torusMaterial->setAmbient(QColor(150, 100, 210));
     Qt3DCore::QTransform *torusTransform = new Qt3DCore::QTransform();
-    torusTransform->setTranslation(QVector3D(0, 1, 0));
+    //torusTransform->setTranslation(QVector3D(0, 1, 0));
     Qt3DRender::QObjectPicker *torusPicker = new Qt3DRender::QObjectPicker;
     QObject::connect(torusPicker, &Qt3DRender::QObjectPicker::clicked,
                      [gizmo, torusTransform](){

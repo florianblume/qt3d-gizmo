@@ -17,10 +17,13 @@ SOURCES += \
     arrowtranslationhandle.cpp \
     flatmaterial.cpp \
     handle.cpp \
+    modeswitcherhandle.cpp \
     planetranslationhandle.cpp \
     qt3dgizmo.cpp \
     raycomputematerial.cpp \
+    rayintersectioncomputematerial.cpp \
     rotationhandle.cpp \
+    transformhandle.cpp \
     transparentobjectpicker.cpp
 
 HEADERS += \
@@ -28,13 +31,16 @@ HEADERS += \
     constants.h \
     flatmaterial.h \
     handle.h \
+    modeswitcherhandle.h \
     plane.h \
     planetranslationhandle.h \
     qt3dgizmo.h \
     qt3dgizmo_p.h \
     ray.h \
     raycomputematerial.h \
+    rayintersectioncomputematerial.h \
     rotationhandle.h \
+    transformhandle.h \
     transparentobjectpicker.h
 
 RESOURCES += \

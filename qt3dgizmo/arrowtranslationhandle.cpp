@@ -6,9 +6,11 @@
 #include <Qt3DExtras/QCylinderMesh>
 #include <Qt3DExtras/QConeMesh>
 
-ArrowTranslationHandle::ArrowTranslationHandle(Qt3DCore::QNode *parent,AxisConstraint constraint,  const QVector3D &position,
-                                               const QString &label, const QColor &color)
-    : Handle(parent, constraint, position, color) {
+ArrowTranslationHandle::ArrowTranslationHandle(Qt3DCore::QNode *parent,
+                                               AxisConstraint constraint,
+                                               const QVector3D &position,
+                                               const QColor &color)
+    : TransformHandle(parent, constraint, position, color) {
 
     m_cylinderEntity = new Qt3DCore::QEntity(this);
     m_cylinderMesh = new Qt3DExtras::QCylinderMesh();
@@ -33,53 +35,14 @@ ArrowTranslationHandle::ArrowTranslationHandle(Qt3DCore::QNode *parent,AxisConst
     m_coneEntity->addComponent(m_coneMesh);
     m_coneEntity->addComponent(m_flatMaterial);
     m_coneEntity->addComponent(m_coneTransform);
-
-    m_labelEntity = new Qt3DExtras::QText2DEntity(m_coneEntity);
-    m_labelEntity->setText(label);
-    m_labelEntity->setColor(color);
-    m_labelEntity->setFont(QFont("Monospace", 1, 5));
-    m_labelEntityTransform = new Qt3DCore::QTransform;
-    m_labelEntity->addComponent(m_labelEntityTransform);
-    m_labelEntity->setWidth(5);
-    m_labelEntity->setHeight(5);
-    m_labelEntityTransform->setScale(0.07);
-}
-
-
-void ArrowTranslationHandle::invertTextRotation(const QMatrix4x4 &viewMatrix) {
-    float values[9];
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            values[(i * 3) + j]  = viewMatrix.row(i)[j];
-        }
-    }
-    QMatrix3x3 rotationMatrix = QMatrix3x3(values);
-    QQuaternion rotation = QQuaternion::fromRotationMatrix(rotationMatrix);
-    m_labelEntityTransform->setRotation((rotation * m_transform->rotation()).inverted());
-}
-
-void ArrowTranslationHandle::setCamera(Qt3DRender::QCamera *camera) {
-    Handle::setCamera(camera);
-    if (m_cameraConnectionContext) {
-        // Delete context to remove old camera connection
-        delete m_cameraConnectionContext;
-    }
-    m_cameraConnectionContext = new QObject();
-    invertTextRotation(camera->viewMatrix());
-    connect(camera, &Qt3DRender::QCamera::viewMatrixChanged,
-           m_cameraConnectionContext, [this, camera](){
-        invertTextRotation(camera->viewMatrix());
-    });
 }
 
 void ArrowTranslationHandle::setColor(const QColor &color) {
     Handle::setColor(color);
-    m_labelEntity->setColor(color);
 }
 
 void ArrowTranslationHandle::setEnabled(bool enabled) {
     Handle::setEnabled(enabled);
-    m_labelEntity->setEnabled(enabled);
 }
 
 void ArrowTranslationHandle::handleAppearanceChange() {
@@ -94,10 +57,4 @@ void ArrowTranslationHandle::handleAppearanceChange() {
         m_coneEntity->removeComponent(m_flatMaterial);
         m_coneEntity->addComponent(m_phongMaterial);
     }
-}
-
-
-void ArrowTranslationHandle::setLabel(const QString &label) {
-    m_label = label;
-    m_labelEntity->setText(label);
 }
