@@ -200,6 +200,7 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
             this, [d](const Ray &ray){
         // Tell the rest of the program that we are still computing a ray,
         // this happens very rarely
+        qDebug() << d->m_timer.elapsed();
         d->m_rayFromClickPosition = ray;
     });
     d->m_computeCommand = new Qt3DRender::QComputeCommand();
@@ -225,6 +226,7 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     });
     connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::positionChanged,
             this, [d](Qt3DInput::QMouseEvent *e){
+        d->m_timer.start();
         d->m_computeMaterial->setMouseCoordinates(e->x(), e->y());
         if (!d->m_mouseDownOnHandle) {
             // Iterate over handles and check for intersections and store any

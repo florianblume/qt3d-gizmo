@@ -11,6 +11,7 @@ PlaneTranslationHandle::PlaneTranslationHandle(Qt3DCore::QNode *parent, AxisCons
     m_planeMeshFront->setHeight(0.2f);
     m_planeFrontEntity->addComponent(m_planeMeshFront);
     m_planeFrontEntity->addComponent(m_flatMaterial);
+    m_picker->setGeometry(m_planeMeshFront->geometry());
 
     m_planeBackEntity = new Qt3DCore::QEntity(this);
     m_planeBackTransform = new Qt3DCore::QTransform;

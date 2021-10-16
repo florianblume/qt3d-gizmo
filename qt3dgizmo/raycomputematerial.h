@@ -37,6 +37,8 @@ private:
     Qt3DRender::QRenderPass *m_renderPass;
     Qt3DRender::QFilterKey *m_filterKey;
     Qt3DRender::QBuffer *m_rayBuffer;
+
+    int m_computationCount = 0;
 };
 
 #endif // RAYCOMPUTEMATERIAL_H

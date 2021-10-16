@@ -36,7 +36,6 @@ RayComputeMaterial::RayComputeMaterial()
     // but arrays are 0-terminated, i.e. we need 4 bytes
     // more and skipp the one index -> 28 bytes
     raysData.resize(28);
-    QByteArray raysByteArray = m_rayBuffer->data();
     m_rayBuffer->setData(raysData);
 
     m_rayBufferParameter->setName("rays");
@@ -66,12 +65,18 @@ RayComputeMaterial::RayComputeMaterial()
 void RayComputeMaterial::setMouseCoordinates(int x, int y) {
     m_mouseXParameter->setValue(x);
     m_mouseYParameter->setValue(y);
+    m_computationCount = 3;
     m_requestComputeParameter->setValue(QVariant(true));
 }
 
 void RayComputeMaterial::bufferDataChanged() {
-    if (m_requestComputeParameter->value().toBool()) {
-        m_requestComputeParameter->setValue(QVariant(false));
+    if (m_requestComputeParameter->value().toBool() ||
+            m_computationCount > 0) {
+        if (m_computationCount > 0) {
+            m_computationCount--;
+        } else {
+            m_requestComputeParameter->setValue(QVariant(false));
+        }
         float *raysPtr = reinterpret_cast<float*>(m_rayBuffer->data().data());
         QVector3D start(raysPtr[0], raysPtr[1], raysPtr[2]);
         // Skip one index because arrays are 0-terminated
@@ -80,7 +85,7 @@ void RayComputeMaterial::bufferDataChanged() {
         milliseconds ms = duration_cast< milliseconds >(
             system_clock::now().time_since_epoch()
         );
-        qDebug() << start << end << ms.count();
+       //qDebug() << start << end << ms.count();
         emit rayComputed(Ray(start, end));
         // TODO need to also get the camera position to pass it to the handles
         // so that they can compute the scaling factor and apply it before

@@ -76,7 +76,7 @@ QPair<bool, QVector3D> Handle::intersectionWithRay(const Ray &ray) {
     // the QEntity it is attached to, so we don't have to do
     // anything else here
     if (m_enabled) {
-        return m_picker->intersectionWithRay(ray);
+        //return m_picker->intersectionWithRay(ray);
     } else {
         return QPair<bool, QVector3D>(false, QVector3D());
     }

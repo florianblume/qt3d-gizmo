@@ -21,7 +21,6 @@ SOURCES += \
     planetranslationhandle.cpp \
     qt3dgizmo.cpp \
     raycomputematerial.cpp \
-    rayintersectioncomputematerial.cpp \
     rotationhandle.cpp \
     transformhandle.cpp \
     transparentobjectpicker.cpp
@@ -38,7 +37,6 @@ HEADERS += \
     qt3dgizmo_p.h \
     ray.h \
     raycomputematerial.h \
-    rayintersectioncomputematerial.h \
     rotationhandle.h \
     transformhandle.h \
     transparentobjectpicker.h

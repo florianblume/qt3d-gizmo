@@ -15,6 +15,7 @@
 #include <QList>
 #include <QPair>
 #include <QtMath>
+#include <QElapsedTimer>
 
 #include <Qt3DCore/QEntity>
 #include <Qt3DRender/QObjectPicker>
@@ -64,6 +65,8 @@ public:
     bool m_hideMouseWhileTransforming = true;
     bool m_currentlyHidingMouse = false;
     bool m_flatAppearance = true;
+
+    QElapsedTimer m_timer;
 
     Qt3DGizmo::TransformationMode m_currentMode = Qt3DGizmo::TransformationMode::Translation;
 
