@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <QTimer>
+#include <QSurfaceFormat>
 
 #include <Qt3DCore/QTransform>
 #include <Qt3DRender/QCamera>
@@ -31,6 +32,7 @@
 #include <Qt3DRender/QBufferCapture>
 
 Qt3DCore::QEntity *createScene(Qt3DExtras::Qt3DWindow *graphicsWindow) {
+
     Qt3DCore::QEntity *root = new Qt3DCore::QEntity();
 
     Qt3DGizmo *gizmo = new Qt3DGizmo(root);
@@ -158,7 +160,7 @@ Qt3DCore::QEntity *createScene(Qt3DExtras::Qt3DWindow *graphicsWindow) {
 int main(int argc, char *argv[]) {
     QSurfaceFormat format = QSurfaceFormat::defaultFormat();
     format.setSamples(8);
-    format.setVersion(3, 0);
+    format.setVersion(4, 5);
     QSurfaceFormat::setDefaultFormat(format);
     QApplication a(argc, argv);
 

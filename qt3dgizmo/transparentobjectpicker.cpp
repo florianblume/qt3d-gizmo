@@ -22,7 +22,7 @@ TransparentObjectPicker::TransparentObjectPicker(Qt3DCore::QNode *parent)
   , m_renderPass(new Qt3DRender::QRenderPass)
   , m_filterKey(new Qt3DRender::QFilterKey) {
 
-    m_shaderProgram->setComputeShaderCode(Qt3DRender::QShaderProgram::loadSource(QUrl(QStringLiteral("qrc:/intersect_ray.frag"))));
+    m_shaderProgram->setComputeShaderCode(Qt3DRender::QShaderProgram::loadSource(QUrl(QStringLiteral("qrc:/intersect_ray.comp"))));
     m_effect->addTechnique(m_technique);
     m_technique->addRenderPass(m_renderPass);
 
