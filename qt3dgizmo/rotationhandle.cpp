@@ -11,6 +11,7 @@ RotationHandle::RotationHandle(Qt3DCore::QNode *parent, AxisConstraint constrain
     m_torusMesh->setSlices(100);
     m_torusEntity->addComponent(m_torusMesh);
     m_torusEntity->addComponent(m_flatMaterial);
+   //m_picker->setGeometry(m_torusMesh->geometry());
 }
 
 void RotationHandle::handleAppearanceChange() {

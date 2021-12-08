@@ -93,7 +93,8 @@ public:
     // and the resulting ray to the handles
     Qt3DInput::QMouseDevice *m_mouseDevice;
     Qt3DInput::QMouseHandler *m_mouseHandler;
-    RayComputeMaterial *m_computeMaterial;
+    TransparentObjectPicker *m_transparentObjectPicker;
+    //RayComputeMaterial *m_computeMaterial;
     Qt3DRender::QComputeCommand *m_computeCommand;
 
     Qt3DCore::QTransform *m_delegateTransform;

@@ -39,6 +39,7 @@ signals:
                      const QPoint &mousePosition);
 
 private slots:
+    void onGeometryDataChanged();
     void onIntersectionBufferDataChanged();
 
 private:
@@ -46,7 +47,7 @@ private:
     QVector3D m_localIntersection;
     QPoint m_mousePosition;
 
-    QList<Qt3DRender::QGeometry*> m_geometry;
+    Qt3DRender::QGeometry* m_geometry;
 
     Qt3DRender::QParameter *m_mouseXParameter;
     Qt3DRender::QParameter *m_mouseYParameter;
@@ -54,10 +55,11 @@ private:
     Qt3DRender::QBuffer *m_intersectionBuffer;
     // We need to store all vertices and indices in a parameter
     // so that the shader doesn't loop over individual vertices
-    Qt3DRender::QParameter *m_verticesParameter;
+    Qt3DRender::QParameter *m_vertexBufferParameter;
+    Qt3DRender::QBuffer *m_vertexBuffer;
     Qt3DRender::QParameter *m_vertexByteStrideParameter;
     Qt3DRender::QParameter *m_vertexOffsetParameter;
-    Qt3DRender::QParameter *m_indicesParameter;
+    Qt3DRender::QParameter *m_indexBufferParameter;
     Qt3DRender::QParameter *m_requestComputeParameter;
     Qt3DRender::QShaderProgram *m_shaderProgram;
     Qt3DRender::QEffect *m_effect;

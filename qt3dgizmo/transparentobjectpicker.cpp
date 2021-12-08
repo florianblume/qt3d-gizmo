@@ -11,10 +11,11 @@ TransparentObjectPicker::TransparentObjectPicker(Qt3DCore::QNode *parent)
   , m_mouseYParameter(new Qt3DRender::QParameter)
   , m_intersectionBufferParameter(new Qt3DRender::QParameter)
   , m_intersectionBuffer(new Qt3DRender::QBuffer)
-  , m_verticesParameter(new Qt3DRender::QParameter)
+  , m_vertexBufferParameter(new Qt3DRender::QParameter)
+  , m_vertexBuffer(new Qt3DRender::QBuffer)
   , m_vertexByteStrideParameter(new Qt3DRender::QParameter)
   , m_vertexOffsetParameter(new Qt3DRender::QParameter)
-  , m_indicesParameter(new Qt3DRender::QParameter)
+  , m_indexBufferParameter(new Qt3DRender::QParameter)
   , m_requestComputeParameter(new Qt3DRender::QParameter)
   , m_shaderProgram(new Qt3DRender::QShaderProgram)
   , m_effect(new Qt3DRender::QEffect)
@@ -22,44 +23,36 @@ TransparentObjectPicker::TransparentObjectPicker(Qt3DCore::QNode *parent)
   , m_renderPass(new Qt3DRender::QRenderPass)
   , m_filterKey(new Qt3DRender::QFilterKey) {
 
-    m_shaderProgram->setComputeShaderCode(Qt3DRender::QShaderProgram::loadSource(QUrl(QStringLiteral("qrc:/intersect_ray.comp"))));
+    m_shaderProgram->setComputeShaderCode(Qt3DRender::QShaderProgram::loadSource(QUrl(QStringLiteral("qrc:/compute_ray.comp"))));
     m_effect->addTechnique(m_technique);
     m_technique->addRenderPass(m_renderPass);
 
-    m_mouseXParameter->setName("mouseX");
-    m_mouseXParameter->setValue(0);
-    m_renderPass->addParameter(m_mouseXParameter);
-    m_mouseYParameter->setName("mouseY");
-    m_mouseYParameter->setValue(0);
-    m_renderPass->addParameter(m_mouseYParameter);
 
     m_intersectionBuffer->setAccessType(Qt3DRender::QBuffer::ReadWrite);
     m_intersectionBuffer->setSyncData(true);
-    m_intersectionBuffer->setObjectName("intersectionBuffer");
     QByteArray intersectionData;
     // 2 QVector3Ds -> 3 floats each a 4 bytes = 24 bytes
-    intersectionData.resize(24);
+    intersectionData.resize(12);
     m_intersectionBuffer->setData(intersectionData);
 
-    m_intersectionBufferParameter->setName("result");
+    m_intersectionBufferParameter->setName("resultBuffer");
     m_intersectionBufferParameter->setValue(QVariant::fromValue(m_intersectionBuffer));
     m_renderPass->addParameter(m_intersectionBufferParameter);
 
-    m_requestComputeParameter->setName("computeRequested");
-    m_requestComputeParameter->setValue(QVariant(false));
-    m_renderPass->addParameter(m_requestComputeParameter);
+    m_vertexBuffer->setAccessType(Qt3DRender::QBuffer::ReadWrite);
+    m_vertexBuffer->setSyncData(true);
+    QByteArray vertexData;
+    // 2 QVector3Ds -> 3 floats each a 4 bytes = 24 bytes
+    vertexData.resize(12);
+    float *vertexDataPtr = reinterpret_cast<float*>(vertexData.data());
+    *vertexDataPtr++ = 0;
+    *vertexDataPtr++ = 5;
+    *vertexDataPtr++ = 10;
+    m_vertexBuffer->setData(intersectionData);
 
-    m_verticesParameter->setName("vertices");
-    m_renderPass->addParameter(m_verticesParameter);
-
-    m_vertexByteStrideParameter->setName("vertexByteStride");
-    m_renderPass->addParameter(m_vertexByteStrideParameter);
-
-    m_vertexOffsetParameter->setName("vertexOffset");
-    m_renderPass->addParameter(m_vertexOffsetParameter);
-
-    m_indicesParameter->setName("indices");
-    m_renderPass->addParameter(m_indicesParameter);
+    m_vertexBufferParameter->setName("vertexBuffer");
+    m_vertexBufferParameter->setValue(QVariant::fromValue(m_vertexBuffer));
+    m_renderPass->addParameter(m_vertexBufferParameter);
 
     m_renderPass->setShaderProgram(m_shaderProgram);
 
@@ -78,48 +71,18 @@ TransparentObjectPicker::TransparentObjectPicker(Qt3DCore::QNode *parent)
 }
 
 void TransparentObjectPicker::setGeometry(Qt3DRender::QGeometry *geometry) {
-    for (int i = 0; i < geometry->attributes().size(); i++) {
-        Qt3DRender::QAttribute *attribute = geometry->attributes()[i];
-        if (attribute->name() == Qt3DRender::QAttribute::defaultPositionAttributeName()) {
-            m_verticesParameter->setValue(attribute->buffer()->data());
-            m_vertexByteStrideParameter->setValue(attribute->byteStride());
-            m_vertexOffsetParameter->setValue(attribute->byteOffset());
-
-        } else if (attribute->attributeType() == Qt3DRender::QAttribute::IndexAttribute) {
-            m_indicesParameter->setValue(attribute->buffer()->data());
+    m_geometry = geometry;
+    for (int i = 0; i < m_geometry->attributes().size(); i++) {
+        Qt3DRender::QAttribute *attribute = m_geometry->attributes()[i];
+        if (attribute->attributeType() == Qt3DRender::QAttribute::IndexAttribute ||
+            attribute->attributeType() == Qt3DRender::QAttribute::VertexAttribute) {
+           connect(attribute->buffer(), &Qt3DRender::QBuffer::dataChanged,
+                   this, &TransparentObjectPicker::onGeometryDataChanged);
+           attribute->buffer()->setSyncData(true);
+           attribute->buffer()->setUsage(Qt3DRender::QBuffer::DynamicRead);
         }
     }
-    /*
-    int byteOffsetPos = m_positionAttribute->byteOffset();
-    int byteStridePos = m_positionAttribute->byteStride();
-    Qt3DRender::QBuffer *vertexBuffer = m_positionAttribute->buffer();
-    int numberOfTriangles = m_indexAttribute->count() / 3;
-    QByteArray data = vertexBuffer->data();
-    for (int i = 0; i < numberOfTriangles; i++) {
-        int idxPos = 0;
-
-        // Get x, y, z positions for 1st vertex
-        QByteArray pos0x = data.mid(idxPos + 0 * sizeof(float), sizeof(float));
-        QByteArray pos0y = data.mid(idxPos + 1 * sizeof(float), sizeof(float));
-        QByteArray pos0z = data.mid(idxPos + 2 * sizeof(float), sizeof(float));
-
-        // Get x, y, z positions for 2nd vertex
-        QByteArray pos1x = data.mid(idxPos + 1 * byteStridePos + 0 * sizeof(float), sizeof(float));
-        QByteArray pos1y = data.mid(idxPos + 1 * byteStridePos + 1 * sizeof(float), sizeof(float));
-        QByteArray pos1z = data.mid(idxPos + 1 * byteStridePos + 2 * sizeof(float), sizeof(float));
-
-        QByteArray pos2x = data.mid(idxPos + 2 * byteStridePos + 0 * sizeof(float), sizeof(float));
-        QByteArray pos2y = data.mid(idxPos + 2 * byteStridePos + 1 * sizeof(float), sizeof(float));
-        QByteArray pos2z = data.mid(idxPos + 2 * byteStridePos + 2 * sizeof(float), sizeof(float));
-
-        QPair<bool, QVector3D> intersection = ray.intersectsTriangle(QVector3D(pos0x.toInt(), pos0y.toInt(), pos0z.toInt()),
-                                                                     QVector3D(pos1x.toInt(), pos1y.toInt(), pos1z.toInt()),
-                                                                     QVector3D(pos2x.toInt(), pos2y.toInt(), pos2z.toInt()));
-        if (intersection.first) {
-            return QPair<bool, QVector3D>(true, intersection.second);
-        }
-    }
-    */
+    //onGeometryDataChanged();
 }
 
 void TransparentObjectPicker::setMousePosition(int x, int y) {
@@ -128,17 +91,92 @@ void TransparentObjectPicker::setMousePosition(int x, int y) {
     m_mouseYParameter->setValue(y);
 }
 
+void TransparentObjectPicker::onGeometryDataChanged() {
+    /*
+    for (int i = 0; i < m_geometry->attributes().size(); i++) {
+        Qt3DRender::QAttribute *attribute = m_geometry->attributes()[i];
+        if (attribute->name() == Qt3DRender::QAttribute::defaultPositionAttributeName()) {
+            m_verticesParameter->setValue(QVariant::fromValue(attribute->buffer()));
+            m_vertexByteStrideParameter->setValue(attribute->byteStride());
+            m_vertexOffsetParameter->setValue(attribute->byteOffset());
+
+        } else if (attribute->attributeType() == Qt3DRender::QAttribute::IndexAttribute) {
+            qDebug() << attribute->buffer()->data();
+            qDebug() << attribute->count();
+            m_indicesParameter->setValue(QVariant::fromValue(attribute->buffer()));
+            m_indicesCountParameter->setValue(attribute->count());
+        }
+    }
+    */
+    Qt3DRender::QAttribute *m_positionAttribute = 0;
+    Qt3DRender::QAttribute *m_indexAttribute = 0;
+    for (int i = 0; i < m_geometry->attributes().size(); i++) {
+        Qt3DRender::QAttribute *attribute = m_geometry->attributes()[i];
+        if (attribute->name() == Qt3DRender::QAttribute::defaultPositionAttributeName()) {
+            //qDebug() << attribute->buffer()->data().mid(10 * sizeof(float), sizeof(float)).toInt();
+            m_vertexBufferParameter->setValue(QVariant::fromValue(attribute->buffer()));
+            //m_vertexByteStrideParameter->setValue(attribute->byteStride());
+            //m_vertexOffsetParameter->setValue(attribute->byteOffset());
+            m_positionAttribute = attribute;
+
+        } else if (attribute->attributeType() == Qt3DRender::QAttribute::IndexAttribute) {
+            //qDebug() << attribute->buffer()->data();
+            //qDebug() << attribute->count();
+            m_indexAttribute = attribute;
+            //m_indexBufferParameter->setValue(QVariant::fromValue(attribute->buffer()));
+        }
+
+        if (m_positionAttribute && m_indexAttribute) {
+            int byteOffsetPos = m_positionAttribute->byteOffset();
+            int byteStridePos = m_positionAttribute->byteStride();
+            Qt3DRender::QBuffer *vertexBuffer = m_positionAttribute->buffer();
+            QByteArray data = vertexBuffer->data();
+            float *floatData = reinterpret_cast<float*>(data.data());
+            for (int i = 0; i < m_indexAttribute->count(); i += 3) {
+
+                // Get x, y, z positions for 1st vertex
+                float pos0x = floatData[i + 0 * sizeof(float) + byteOffsetPos];
+                float pos0y = floatData[i + 1 * sizeof(float) + byteOffsetPos];
+                float pos0z = floatData[i + 2 * sizeof(float) + byteOffsetPos];
+
+                // Get x, y, z positions for 2nd vertex
+                float pos1x = floatData[i + 1 * byteStridePos + 0 * sizeof(float) + byteOffsetPos];
+                float pos1y = floatData[i + 1 * byteStridePos + 1 * sizeof(float) + byteOffsetPos];
+                float pos1z = floatData[i + 1 * byteStridePos + 2 * sizeof(float) + byteOffsetPos];
+
+                float pos2x = floatData[i + 2 * byteStridePos + 0 * sizeof(float) + byteOffsetPos];
+                float pos2y = floatData[i + 2 * byteStridePos + 1 * sizeof(float) + byteOffsetPos];
+                float pos2z = floatData[i + 2 * byteStridePos + 2 * sizeof(float) + byteOffsetPos];
+
+                //if (pos0x > 0 && pos0y > 0)
+                if (i == 0) {
+                    //qDebug() << pos0x << pos0y << pos0z;
+                    //qDebug() << pos1x << pos1y << pos1z;
+                    //qDebug() << pos2x << pos2y << pos2z;
+                }
+
+                //qDebug() << floatPos0x << floatPos0y << floatPos0z;
+
+                //qDebug() << QVector3D(pos0x.toInt(), pos0y.toInt(), pos0z.toInt());
+                //qDebug() << QVector3D(pos1x.toInt(), pos1y.toInt(), pos1z.toInt());
+                //qDebug() << QVector3D(pos2x.toInt(), pos2y.toInt(), pos2z.toInt());
+            }
+        }
+    }
+}
+
 void TransparentObjectPicker::onIntersectionBufferDataChanged() {
     float *intersectionPtr = reinterpret_cast<float*>(m_intersectionBuffer->data().data());
+
     QVector3D worldIntersection(intersectionPtr[0], intersectionPtr[1], intersectionPtr[2]);
     // Skip one index because arrays are 0-terminated
-    QVector3D localIntersection(intersectionPtr[3], intersectionPtr[4], intersectionPtr[5]);
+    //QVector3D localIntersection(intersectionPtr[3], intersectionPtr[4], intersectionPtr[5]);
 
     // For testing
     using namespace std::chrono;
     milliseconds ms = duration_cast< milliseconds >(
         system_clock::now().time_since_epoch()
     );
-   //qDebug() << start << end << ms.count();
-    emit intersected(worldIntersection, localIntersection, m_mousePosition);
+    qDebug() << worldIntersection;
+    //emit intersected(worldIntersection, localIntersection, m_mousePosition);
 }

@@ -15,6 +15,7 @@
 #include <Qt3DRender/QObjectPicker>
 #include <Qt3DRender/QPickEvent>
 #include <Qt3DExtras/QPhongMaterial>
+#include <Qt3DRender/QComputeCommand>
 
 class Handle : public Qt3DCore::QEntity {
 
@@ -60,9 +61,10 @@ protected:
     QColor m_color;
     QColor m_highlightColor;
     Qt3DCore::QTransform *m_transform;
-    TransparentObjectPicker *m_picker;
+    //TransparentObjectPicker *m_picker;
     FlatMaterial *m_flatMaterial;
     Qt3DExtras::QPhongMaterial *m_phongMaterial;
+    //Qt3DRender::QComputeCommand *m_computeCommand;
     bool m_flatAppearance = true;
 };
 

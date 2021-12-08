@@ -18,6 +18,7 @@ public:
                            AxisConstraint constraint,
                            const QVector3D &position,
                            const QColor &color);
+    Qt3DRender::QGeometry *geometry();
 
 public slots:
     void setColor(const QColor &color);

@@ -85,7 +85,6 @@ void RayComputeMaterial::bufferDataChanged() {
         milliseconds ms = duration_cast< milliseconds >(
             system_clock::now().time_since_epoch()
         );
-       //qDebug() << start << end << ms.count();
         emit rayComputed(Ray(start, end));
         // TODO need to also get the camera position to pass it to the handles
         // so that they can compute the scaling factor and apply it before

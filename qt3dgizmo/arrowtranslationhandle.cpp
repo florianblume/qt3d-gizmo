@@ -22,6 +22,7 @@ ArrowTranslationHandle::ArrowTranslationHandle(Qt3DCore::QNode *parent,
     m_cylinderEntity->addComponent(m_cylinderMesh);
     m_cylinderEntity->addComponent(m_flatMaterial);
     m_cylinderEntity->addComponent(m_cylinderTransform);
+    //m_picker->setGeometry(m_cylinderMesh->geometry());
 
     m_coneEntity = new Qt3DCore::QEntity(this);
     m_coneMesh = new Qt3DExtras::QConeMesh();
@@ -35,6 +36,10 @@ ArrowTranslationHandle::ArrowTranslationHandle(Qt3DCore::QNode *parent,
     m_coneEntity->addComponent(m_coneMesh);
     m_coneEntity->addComponent(m_flatMaterial);
     m_coneEntity->addComponent(m_coneTransform);
+}
+
+Qt3DRender::QGeometry *ArrowTranslationHandle::geometry() {
+    return m_cylinderMesh->geometry();
 }
 
 void ArrowTranslationHandle::setColor(const QColor &color) {

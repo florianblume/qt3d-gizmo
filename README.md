@@ -2,7 +2,13 @@
 
 3D gizmo to attach to Qt3D entities.
 
+## Preparation
+
+* You need to put a special framegraph part with `QDispatchCompute` and `QBufferCapture` somewhere.
+
 ### What's working
+
+**Right now nothing works du to restructuring works**
 
 - Accurate translation with mouse in XYZ
 - Accurate rotation around XYZ

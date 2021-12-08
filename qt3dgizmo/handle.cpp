@@ -6,11 +6,11 @@
 Handle::Handle(Qt3DCore::QNode *parent, const QVector3D &position, const QColor &color)
     : Qt3DCore::QEntity(parent)
     , m_color(color)
-    , m_transform(new Qt3DCore::QTransform)
-    , m_picker(new TransparentObjectPicker) {
+    , m_transform(new Qt3DCore::QTransform) {
+    //, m_picker(new TransparentObjectPicker) {
     addComponent(m_transform);
     m_transform->setTranslation(position);
-    addComponent(m_picker);
+    //addComponent(m_picker);
 
     // For the subclasses to add
     m_phongMaterial = new Qt3DExtras::QPhongMaterial();
@@ -21,6 +21,16 @@ Handle::Handle(Qt3DCore::QNode *parent, const QVector3D &position, const QColor 
     m_flatMaterial->setColor(color);
 
     m_highlightColor = QColor(255, 255, 180);
+
+    /*
+    m_computeCommand = new Qt3DRender::QComputeCommand();
+    m_computeCommand->setRunType(Qt3DRender::QComputeCommand::Continuous);
+    addComponent(m_computeCommand);
+    // Problem is 1D (compute the two rays), i.e. Y and Z must be 1
+    m_computeCommand->setWorkGroupX(1);
+    m_computeCommand->setWorkGroupY(1);
+    m_computeCommand->setWorkGroupZ(1);
+    */
 }
 
 

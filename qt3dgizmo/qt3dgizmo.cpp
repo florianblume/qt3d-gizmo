@@ -194,15 +194,18 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     , d_ptr(new Qt3DGizmoPrivate) {
     Q_D(Qt3DGizmo);
 
-    d->m_computeMaterial = new RayComputeMaterial;
-    addComponent(d->m_computeMaterial);
+    //d->m_computeMaterial = new RayComputeMaterial;
+    //addComponent(d->m_computeMaterial);
+    /*
     connect(d->m_computeMaterial, &RayComputeMaterial::rayComputed,
             this, [d](const Ray &ray){
         // Tell the rest of the program that we are still computing a ray,
         // this happens very rarely
-        qDebug() << d->m_timer.elapsed();
+        //qDebug() << d->m_timer.elapsed();
         d->m_rayFromClickPosition = ray;
     });
+    */
+
     d->m_computeCommand = new Qt3DRender::QComputeCommand();
     d->m_computeCommand->setRunType(Qt3DRender::QComputeCommand::Continuous);
     addComponent(d->m_computeCommand);
@@ -211,6 +214,8 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     d->m_computeCommand->setWorkGroupY(1);
     d->m_computeCommand->setWorkGroupZ(1);
 
+    d->m_transparentObjectPicker = new TransparentObjectPicker;
+    addComponent(d->m_transparentObjectPicker);
     d->m_mouseDevice = new Qt3DInput::QMouseDevice(this);
     d->m_mouseHandler = new Qt3DInput::QMouseHandler;
     d->m_mouseHandler->setSourceDevice(d->m_mouseDevice);
@@ -227,7 +232,7 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::positionChanged,
             this, [d](Qt3DInput::QMouseEvent *e){
         d->m_timer.start();
-        d->m_computeMaterial->setMouseCoordinates(e->x(), e->y());
+        //d->m_computeMaterial->setMouseCoordinates(e->x(), e->y());
         if (!d->m_mouseDownOnHandle) {
             // Iterate over handles and check for intersections and store any
             // We might not have the ray ready here yet but during the next
@@ -281,6 +286,7 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     d->m_translationHandleX->transform()->setRotationZ(-90);
     connect(d->m_translationHandleX, &Handle::pressed,
             d, &Qt3DGizmoPrivate::initialize);
+    d->m_transparentObjectPicker->setGeometry(d->m_translationHandleX->geometry());
 
     d->m_translationHandleY = new ArrowTranslationHandle(this, Handle::YTrans, {0, 0, 0}, green);
     d->m_translationHandles.append(d->m_translationHandleY);
