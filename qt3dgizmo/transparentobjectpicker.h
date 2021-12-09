@@ -23,6 +23,7 @@
 #include <Qt3DRender/QBuffer>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QElapsedTimer>
 
 class TransparentObjectPicker : public Qt3DRender::QMaterial {
 
@@ -62,7 +63,7 @@ private:
     Qt3DRender::QParameter *m_vertexBufferParameter;
     Qt3DRender::QBuffer *m_vertexBuffer;
     Qt3DRender::QParameter *m_vertexByteStrideParameter;
-    Qt3DRender::QParameter *m_vertexOffsetParameter;
+    Qt3DRender::QParameter *m_vertexByteOffsetParameter;
     Qt3DRender::QParameter *m_indexBufferParameter;
     Qt3DRender::QBuffer *m_indexBuffer;
     Qt3DRender::QParameter *m_requestComputeParameter;
@@ -71,6 +72,8 @@ private:
     Qt3DRender::QTechnique *m_technique;
     Qt3DRender::QRenderPass *m_renderPass;
     Qt3DRender::QFilterKey *m_filterKey;
+
+    QElapsedTimer timer;
 };
 
 #endif // TRANSPARENTOBJECTPICKER_H

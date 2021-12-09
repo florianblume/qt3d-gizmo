@@ -14,7 +14,7 @@ TransparentObjectPicker::TransparentObjectPicker(Qt3DCore::QNode *parent)
   , m_vertexBufferParameter(new Qt3DRender::QParameter)
   , m_vertexBuffer(new Qt3DRender::QBuffer)
   , m_vertexByteStrideParameter(new Qt3DRender::QParameter)
-  , m_vertexOffsetParameter(new Qt3DRender::QParameter)
+  , m_vertexByteOffsetParameter(new Qt3DRender::QParameter)
   , m_indexBufferParameter(new Qt3DRender::QParameter)
   , m_indexBuffer(new Qt3DRender::QBuffer)
   , m_requestComputeParameter(new Qt3DRender::QParameter)
@@ -28,12 +28,19 @@ TransparentObjectPicker::TransparentObjectPicker(Qt3DCore::QNode *parent)
     m_effect->addTechnique(m_technique);
     m_technique->addRenderPass(m_renderPass);
 
+    m_mouseXParameter->setName("mouseX");
+    m_mouseXParameter->setValue(-1);
+    m_renderPass->addParameter(m_mouseXParameter);
+
+    m_mouseYParameter->setName("mouseY");
+    m_mouseYParameter->setValue(-1);
+    m_renderPass->addParameter(m_mouseYParameter);
 
     m_intersectionBuffer->setAccessType(Qt3DRender::QBuffer::ReadWrite);
     m_intersectionBuffer->setSyncData(true);
     QByteArray intersectionData;
     // 2 QVector3Ds -> 3 floats each a 4 bytes = 24 bytes
-    intersectionData.resize(16);
+    intersectionData.resize(28);
     m_intersectionBuffer->setData(intersectionData);
 
     m_intersectionBufferParameter->setName("resultBuffer");
@@ -43,6 +50,14 @@ TransparentObjectPicker::TransparentObjectPicker(Qt3DCore::QNode *parent)
     m_vertexBufferParameter->setName("vertexBuffer");
     m_vertexBufferParameter->setValue(QVariant());
     m_renderPass->addParameter(m_vertexBufferParameter);
+
+    m_vertexByteStrideParameter->setName("vertexByteStride");
+    m_vertexByteStrideParameter->setValue(QVariant());
+    m_renderPass->addParameter(m_vertexByteStrideParameter);
+
+    m_vertexByteOffsetParameter->setName("vertexByteOffset");
+    m_vertexByteOffsetParameter->setValue(QVariant());
+    m_renderPass->addParameter(m_vertexByteOffsetParameter);
 
     m_indexBufferParameter->setName("indexBuffer");
     m_indexBufferParameter->setValue(QVariant());
@@ -111,8 +126,8 @@ void TransparentObjectPicker::onGeometryDataChanged() {
         if (attribute->name() == Qt3DRender::QAttribute::defaultPositionAttributeName()) {
             //qDebug() << attribute->buffer()->data().mid(10 * sizeof(float), sizeof(float)).toInt();
             m_vertexBufferParameter->setValue(QVariant::fromValue(attribute->buffer()));
-            //m_vertexByteStrideParameter->setValue(attribute->byteStride());
-            //m_vertexOffsetParameter->setValue(attribute->byteOffset());
+            m_vertexByteStrideParameter->setValue(attribute->byteStride());
+            m_vertexByteOffsetParameter->setValue(attribute->byteOffset());
             m_positionAttribute = attribute;
 
         } else if (attribute->attributeType() == Qt3DRender::QAttribute::IndexAttribute) {
@@ -158,8 +173,7 @@ void TransparentObjectPicker::onGeometryDataChanged() {
         }
     }
 
-    char *carray = (char *) malloc(m_indexAttribute->count() * 4);
-    memcpy(carray, indexData, sizeof(indexData));
+    char *carray = (char *) &indexData;
     m_indexBuffer->setData(QByteArray(carray, m_indexAttribute->count()));
     m_indexBufferParameter->setValue(QVariant::fromValue(m_indexBuffer));
 }
@@ -168,11 +182,12 @@ void TransparentObjectPicker::onIntersectionBufferDataChanged(const QByteArray &
     //qDebug() << bytes.length();
     bool *intersected = reinterpret_cast<bool*>(m_intersectionBuffer->data().data());
     //qDebug() << intersected[0];
+    //qDebug() << intersected[0];
     float *intersectionPtr = reinterpret_cast<float*>(m_intersectionBuffer->data().data());
 
     qDebug() << intersectionPtr[1] << intersectionPtr[2] << intersectionPtr[3];
     // Skip one index because arrays are 0-terminated
-    //QVector3D localIntersection(intersectionPtr[3], intersectionPtr[4], intersectionPtr[5]);
+    qDebug() << intersectionPtr[4] <<  intersectionPtr[5] << intersectionPtr[6];
 
     // For testing
     using namespace std::chrono;

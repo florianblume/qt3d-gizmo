@@ -232,7 +232,7 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::positionChanged,
             this, [d](Qt3DInput::QMouseEvent *e){
         d->m_timer.start();
-        //d->m_computeMaterial->setMouseCoordinates(e->x(), e->y());
+        d->m_transparentObjectPicker->setMousePosition(e->x(), e->y());
         if (!d->m_mouseDownOnHandle) {
             // Iterate over handles and check for intersections and store any
             // We might not have the ray ready here yet but during the next
