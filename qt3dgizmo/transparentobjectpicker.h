@@ -21,6 +21,8 @@
 #include <Qt3DRender/QRenderPass>
 #include <Qt3DRender/QFilterKey>
 #include <Qt3DRender/QBuffer>
+#include <QMutex>
+#include <QMutexLocker>
 
 class TransparentObjectPicker : public Qt3DRender::QMaterial {
 
@@ -40,7 +42,7 @@ signals:
 
 private slots:
     void onGeometryDataChanged();
-    void onIntersectionBufferDataChanged();
+    void onIntersectionBufferDataChanged(const QByteArray &bytes);
 
 private:
     QVector3D m_worldIntersection;
@@ -48,6 +50,8 @@ private:
     QPoint m_mousePosition;
 
     Qt3DRender::QGeometry* m_geometry;
+
+    QMutex m_mutex;
 
     Qt3DRender::QParameter *m_mouseXParameter;
     Qt3DRender::QParameter *m_mouseYParameter;
@@ -60,6 +64,7 @@ private:
     Qt3DRender::QParameter *m_vertexByteStrideParameter;
     Qt3DRender::QParameter *m_vertexOffsetParameter;
     Qt3DRender::QParameter *m_indexBufferParameter;
+    Qt3DRender::QBuffer *m_indexBuffer;
     Qt3DRender::QParameter *m_requestComputeParameter;
     Qt3DRender::QShaderProgram *m_shaderProgram;
     Qt3DRender::QEffect *m_effect;

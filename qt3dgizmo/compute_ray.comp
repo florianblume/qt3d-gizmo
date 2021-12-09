@@ -4,6 +4,7 @@
 layout (local_size_x=1) in;
 
 layout (std430, binding = 0) buffer resultBuffer {
+    bool intersected;
     float intersection[];
 };
 
@@ -11,8 +12,13 @@ layout (std430, binding = 1) buffer vertexBuffer {
     float vertices[];
 };
 
+layout (std430, binding = 2) buffer indexBuffer {
+    int indices[];
+};
+
 void main() {
-    intersection[0] = vertices[20];
-    intersection[1] = vertices[21];
-    intersection[2] = vertices[21];
+    intersected = true;
+    intersection[0] = float(indices[0]);
+    intersection[1] = float(indices[1]);
+    intersection[2] = float(indices[2]);
 }
