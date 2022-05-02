@@ -4,11 +4,4 @@
 
 ### What's working
 
-- Accurate translation with mouse in XYZ
-- Accurate rotation around XYZ
-- Switching between rotation and translation
-
-### Known issues
-
-- Qt3D only allows to set the picking settings globally and not per object picker. But we would need to set the `pickResultMode` to `All` in order to be able to pick translation or rotation axes (or the switcher sphere) when they are actually behind the object that is to be modified. They are always ontop of everything because they are drawn ontop, but Qt3D's ray intersection procedure checks if the objects are actually behind other objects, when the `pickResultMode` is set to `NearestPick` - which is what you want normally. Setting the result mode to `All` makes the gizmo work properly but now objects that are behind others are also pickable.
-- When properly disabling the gizmo by using Qt3D's `setEnabled` function, the gizmo is not usable even after enabling it again. Only e.g. resizing the 3D window then allows the gizmo to work. It seems that there is an internal issue with updating the object pickers to allow to pick the entity after enabling it again. We could investigate this further but I "hacked" the enabling function and am now simply disabling or enabling the materials on the transformation axes. This works but needs to be seen as a workaround.
+NOTHING WORKS. The reason is that picking is problematic in Qt3D. You need to get the picking parameters like the camera matrix from within the shader because we need to compute picking in a special way. No idea when I will find time to finish this project.
