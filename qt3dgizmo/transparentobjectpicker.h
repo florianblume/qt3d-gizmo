@@ -58,6 +58,8 @@ private:
     Qt3DRender::QParameter *m_mouseYParameter;
     Qt3DRender::QParameter *m_intersectionBufferParameter;
     Qt3DRender::QBuffer *m_intersectionBuffer;
+    Qt3DRender::QParameter *m_isIntersectedBufferParameter;
+    Qt3DRender::QBuffer *m_isIntersectedBuffer;
     // We need to store all vertices and indices in a parameter
     // so that the shader doesn't loop over individual vertices
     Qt3DRender::QParameter *m_vertexBufferParameter;

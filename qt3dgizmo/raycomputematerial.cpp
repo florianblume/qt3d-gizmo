@@ -70,24 +70,17 @@ void RayComputeMaterial::setMouseCoordinates(int x, int y) {
 }
 
 void RayComputeMaterial::bufferDataChanged() {
-    if (m_requestComputeParameter->value().toBool() ||
-            m_computationCount > 0) {
-        if (m_computationCount > 0) {
-            m_computationCount--;
-        } else {
-            m_requestComputeParameter->setValue(QVariant(false));
-        }
-        float *raysPtr = reinterpret_cast<float*>(m_rayBuffer->data().data());
-        QVector3D start(raysPtr[0], raysPtr[1], raysPtr[2]);
-        // Skip one index because arrays are 0-terminated
-        QVector3D end(raysPtr[4], raysPtr[5], raysPtr[6]);
-        using namespace std::chrono;
-        milliseconds ms = duration_cast< milliseconds >(
-            system_clock::now().time_since_epoch()
-        );
-        emit rayComputed(Ray(start, end));
-        // TODO need to also get the camera position to pass it to the handles
-        // so that they can compute the scaling factor and apply it before
-        // compute intersections
-    }
+    m_requestComputeParameter->setValue(QVariant(false));
+    float *raysPtr = reinterpret_cast<float*>(m_rayBuffer->data().data());
+    QVector3D start(raysPtr[0], raysPtr[1], raysPtr[2]);
+    // Skip one index because arrays are 0-terminated
+    QVector3D end(raysPtr[4], raysPtr[5], raysPtr[6]);
+    using namespace std::chrono;
+    milliseconds ms = duration_cast< milliseconds >(
+        system_clock::now().time_since_epoch()
+    );
+    emit rayComputed(Ray(start, end));
+    // TODO need to also get the camera position to pass it to the handles
+    // so that they can compute the scaling factor and apply it before
+    // compute intersections
 }

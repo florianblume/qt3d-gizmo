@@ -3,15 +3,15 @@
 // Simply do all computations in one call (x=1 is only one thread)
 layout (local_size_x=1) in;
 
-layout (std430, binding=1) coherent buffer intersectionBuffer {
+layout (std430, binding = 0) coherent buffer resultBuffer {
     float intersection[];
 };
 
-layout (std430, binding=2) buffer vertexBuffer {
+layout (std430, binding = 1) buffer vertexBuffer {
     float vertices[];
 };
 
-layout (std430, binding=3) buffer indexBuffer {
+layout (std430, binding = 2) buffer indexBuffer {
     int indices[];
 };
 
@@ -20,7 +20,6 @@ uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 uniform mat4 modelView;
-uniform mat4 inverseViewProjectionMatrix;
 uniform mat4 viewportMatrix;
 uniform vec3 eyePosition;
 
@@ -39,13 +38,15 @@ struct Viewport {
     int height;
 };
 
-vec3 unproject(in vec3 vector, in Viewport viewport, in mat4 invViewProj) {
+vec3 unproject(in vec3 vector, in mat4 viewMatrix, in mat4 projectionMatrix, in Viewport viewport) {
+    mat4 inverseProjectionViewMatrix = inverse(projectionMatrix * viewMatrix);
+
     vec4 tmp = vec4(vector, 1.0f);
     tmp[0] = ((tmp.x - float(viewport.x)) / float(viewport.width));
     tmp[1] =((tmp.y - float(viewport.y)) / float(viewport.height));
     tmp = tmp * 2.0f - vec4(1.0f);
 
-    vec4 obj = invViewProj * tmp;
+    vec4 obj = inverseProjectionViewMatrix * tmp;
     if (obj.w < 0.0001 || obj.w > -0.0001) {
         obj.w = 1.0f;
     }
@@ -102,11 +103,6 @@ void computeIntersection(in vec3 a, in vec3 b, in vec3 c, in vec3 start, in vec3
 }
 
 void main() {
-    mat4 invViewProj = inverseViewProjectionMatrix;
-    invViewProj[0][0] = 0.139624;
-    invViewProj[0][1] = 1.65688e-07;
-    invViewProj[0][2] =  -0.172202;
-    invViewProj[0][3] = 5.54795e-08;
     if (mouseX == -1 || mouseY == -1) {
         return;
     }
@@ -124,8 +120,14 @@ void main() {
     vec3 projectedStart = vec3(x, yCorrected, winZ0);
     vec3 projectedEnd = vec3(x, yCorrected, winZ1);
 
-    vec3 unprojectedStart = unproject(projectedStart, viewport, invViewProj);
-    vec3 unprojectedEnd = unproject(projectedEnd, viewport, invViewProj);
+    vec3 unprojectedStart = unproject(projectedStart,
+                                      viewMatrix,
+                                      projectionMatrix,
+                                      viewport);
+    vec3 unprojectedEnd = unproject(projectedEnd,
+                                    viewMatrix,
+                                    projectionMatrix,
+                                    viewport);
     vec3 worldIntersection = vec3(0);
 
     for (int i = 0; i < indices.length(); i += 3) {
@@ -141,18 +143,13 @@ void main() {
         vec3 c = vec3(vertices[idx2 * vertexByteStride + vertexByteOffset + 0],
                       vertices[idx2 * vertexByteStride + vertexByteOffset + 1],
                       vertices[idx2 * vertexByteStride + vertexByteOffset + 2]);
-        a = vec3(modelMatrix * vec4(a, 1.0));
-        b = vec3(modelMatrix * vec4(b, 1.0));
-        c = vec3(modelMatrix * vec4(c, 1.0));
+        vec4 a_1 = modelView * vec4(a, 1.0);
+        vec4 b_1 = modelView * vec4(b, 1.0);
+        vec4 c_1 = modelView * vec4(c, 1.0);
         // need to multiple vertex coordinates with modelView matrix
-        bool isIntersected = false;
-        computeIntersection(a, b, c, unprojectedStart, unprojectedEnd, isIntersected, worldIntersection);
-        if (isIntersected) {
-            //for (int j = 0; j < 4; j++) {
-            //    for (int k = 0; k < 4; k++) {
-            //        intersection[j * 4 + k] = inverseViewProjectionMatrix[k][j];
-            //    }
-            //}
+        bool intersected2;
+        computeIntersection(vec3(a_1), vec3(b_1), vec3(c_1), unprojectedStart, unprojectedEnd, intersected2, worldIntersection);
+        if (intersected2) {
             intersection[0] = worldIntersection[0];
             intersection[1] = worldIntersection[1];
             intersection[2] = worldIntersection[2];

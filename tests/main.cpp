@@ -171,5 +171,9 @@ int main(int argc, char *argv[]) {
     graphicsWindow->setRootEntity(root);
     graphicsWindow->show();
 
+    qDebug() << graphicsWindow->camera()->projectionMatrix();
+    qDebug() << graphicsWindow->camera()->viewMatrix();
+    qDebug() << (graphicsWindow->camera()->projectionMatrix() * graphicsWindow->camera()->viewMatrix()).inverted();
+
     return a.exec();
 }

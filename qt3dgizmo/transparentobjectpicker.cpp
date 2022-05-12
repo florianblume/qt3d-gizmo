@@ -11,6 +11,8 @@ TransparentObjectPicker::TransparentObjectPicker(Qt3DCore::QNode *parent)
   , m_mouseYParameter(new Qt3DRender::QParameter)
   , m_intersectionBufferParameter(new Qt3DRender::QParameter)
   , m_intersectionBuffer(new Qt3DRender::QBuffer)
+  , m_isIntersectedBufferParameter(new Qt3DRender::QParameter)
+  , m_isIntersectedBuffer(new Qt3DRender::QBuffer)
   , m_vertexBufferParameter(new Qt3DRender::QParameter)
   , m_vertexBuffer(new Qt3DRender::QBuffer)
   , m_vertexByteStrideParameter(new Qt3DRender::QParameter)
@@ -39,28 +41,28 @@ TransparentObjectPicker::TransparentObjectPicker(Qt3DCore::QNode *parent)
     m_intersectionBuffer->setAccessType(Qt3DRender::QBuffer::ReadWrite);
     m_intersectionBuffer->setSyncData(true);
     QByteArray intersectionData;
-    // 2 QVector3Ds -> 3 floats each a 4 bytes = 24 bytes
-    intersectionData.resize(28);
+    // 2 QVector3Ds -> 3 floats each 4 bytes = 24 bytes
+    intersectionData.resize(64);
     m_intersectionBuffer->setData(intersectionData);
 
-    m_intersectionBufferParameter->setName("resultBuffer");
+    m_intersectionBufferParameter->setName("intersectionBuffer");
     m_intersectionBufferParameter->setValue(QVariant::fromValue(m_intersectionBuffer));
     m_renderPass->addParameter(m_intersectionBufferParameter);
 
     m_vertexBufferParameter->setName("vertexBuffer");
-    m_vertexBufferParameter->setValue(QVariant());
+    m_vertexBufferParameter->setValue(QVariant(0));
     m_renderPass->addParameter(m_vertexBufferParameter);
 
     m_vertexByteStrideParameter->setName("vertexByteStride");
-    m_vertexByteStrideParameter->setValue(QVariant());
+    m_vertexByteStrideParameter->setValue(QVariant(0));
     m_renderPass->addParameter(m_vertexByteStrideParameter);
 
     m_vertexByteOffsetParameter->setName("vertexByteOffset");
-    m_vertexByteOffsetParameter->setValue(QVariant());
+    m_vertexByteOffsetParameter->setValue(QVariant(0));
     m_renderPass->addParameter(m_vertexByteOffsetParameter);
 
     m_indexBufferParameter->setName("indexBuffer");
-    m_indexBufferParameter->setValue(QVariant());
+    m_indexBufferParameter->setValue(QVariant(0));
     m_renderPass->addParameter(m_indexBufferParameter);
 
     m_renderPass->setShaderProgram(m_shaderProgram);
@@ -150,21 +152,8 @@ void TransparentObjectPicker::onGeometryDataChanged() {
         int *intData2 = reinterpret_cast<int*>(m_indexAttribute->buffer()->data().data());
         for (int i = 0; i < m_indexAttribute->count(); i += 3) {
 
-            // Get x, y, z positions for 1st vertex
-            float pos0x = floatData[i + 0 * sizeof(float) + byteOffsetPos];
-            float pos0y = floatData[i + 1 * sizeof(float) + byteOffsetPos];
-            float pos0z = floatData[i + 2 * sizeof(float) + byteOffsetPos];
 
-            // Get x, y, z positions for 2nd vertex
-            float pos1x = floatData[i + 1 * byteStridePos + 0 * sizeof(float) + byteOffsetPos];
-            float pos1y = floatData[i + 1 * byteStridePos + 1 * sizeof(float) + byteOffsetPos];
-            float pos1z = floatData[i + 1 * byteStridePos + 2 * sizeof(float) + byteOffsetPos];
-
-            float pos2x = floatData[i + 2 * byteStridePos + 0 * sizeof(float) + byteOffsetPos];
-            float pos2y = floatData[i + 2 * byteStridePos + 1 * sizeof(float) + byteOffsetPos];
-            float pos2z = floatData[i + 2 * byteStridePos + 2 * sizeof(float) + byteOffsetPos];
-
-            indexData[i] = intData[i];
+            indexData[i]     = intData[i];
             indexData[i + 1] = intData[i + 1];
             indexData[i + 2] = intData[i + 2];
 
@@ -179,20 +168,20 @@ void TransparentObjectPicker::onGeometryDataChanged() {
 }
 
 void TransparentObjectPicker::onIntersectionBufferDataChanged(const QByteArray &bytes) {
-    //qDebug() << bytes.length();
-    bool *intersected = reinterpret_cast<bool*>(m_intersectionBuffer->data().data());
-    //qDebug() << intersected[0];
-    //qDebug() << intersected[0];
-    float *intersectionPtr = reinterpret_cast<float*>(m_intersectionBuffer->data().data());
-
-    qDebug() << intersectionPtr[1] << intersectionPtr[2] << intersectionPtr[3];
-    // Skip one index because arrays are 0-terminated
-    qDebug() << intersectionPtr[4] <<  intersectionPtr[5] << intersectionPtr[6];
+    const float *intersectionPtr = reinterpret_cast<const float*>(bytes.data());
+    for (int i = 0; i < 4; i++) {
+        QString line = "";
+        for (int j = 0; j < 4; j++) {
+            line += QString::number(intersectionPtr[i * 4 + j]) + " ";
+        }
+        qDebug() << line;
+    }
 
     // For testing
     using namespace std::chrono;
     milliseconds ms = duration_cast< milliseconds >(
         system_clock::now().time_since_epoch()
     );
+    //qDebug() << ms.count();
     //emit intersected(worldIntersection, localIntersection, m_mousePosition);
 }
