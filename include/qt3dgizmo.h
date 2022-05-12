@@ -9,6 +9,8 @@
 #include <Qt3DCore/QTransform>
 #include <Qt3DRender/QCamera>
 
+static const int DEFAULT_PICKING_PRIORITY = 100;
+
 class Qt3DGizmoPrivate;
 
 class Qt3DGizmo : public Qt3DCore::QEntity {
@@ -74,6 +76,7 @@ public:
     bool scaleToCameraDistance() const;
     bool hideMouseWhileTransforming() const;
     bool flatAppearance() const;
+    int pickingPriority() const;
 
 public Q_SLOTS:
     void setMode(Qt3DGizmo::Mode mode);
@@ -82,6 +85,7 @@ public Q_SLOTS:
     void setWindowHeight(int height);
     void setDelegateTransform(Qt3DCore::QTransform *transform);
     void setCamera(Qt3DRender::QCamera *camera);
+    void setPickingPriority(int priority);
 
     void setScale(float scale);
     void setScaleToCameraDistance(bool scaleToCameraDistance);
@@ -93,6 +97,7 @@ Q_SIGNALS:
     void windowSizeChanged(const QSize &size);
     void delegateTransformChanged(Qt3DCore::QTransform *transform);
     void cameraChanged(Qt3DRender::QCamera *camera);
+    void pickingPriorityChanged(int priority);
 
     void scaleChanged(float scale);
     void scaleToCameraDistanceChanged(bool scaleToCameraDistance);

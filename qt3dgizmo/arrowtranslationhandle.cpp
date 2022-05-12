@@ -6,9 +6,13 @@
 #include <Qt3DExtras/QCylinderMesh>
 #include <Qt3DExtras/QConeMesh>
 
-ArrowTranslationHandle::ArrowTranslationHandle(Qt3DCore::QNode *parent,AxisConstraint constraint,  const QVector3D &position,
-                                               const QString &label, const QColor &color)
-    : Handle(parent, constraint, position, color) {
+ArrowTranslationHandle::ArrowTranslationHandle(Qt3DCore::QNode *parent,
+                                               AxisConstraint constraint,
+                                               const QVector3D &position,
+                                               const QString &label,
+                                               const QColor &color,
+                                               int pickingPriority)
+    : Handle(parent, constraint, position, color, pickingPriority) {
 
     m_cylinderEntity = new Qt3DCore::QEntity(this);
     m_cylinderMesh = new Qt3DExtras::QCylinderMesh();
@@ -43,8 +47,6 @@ ArrowTranslationHandle::ArrowTranslationHandle(Qt3DCore::QNode *parent,AxisConst
     m_labelEntity->setWidth(5);
     m_labelEntity->setHeight(5);
     m_labelEntityTransform->setScale(0.07);
-
-    qDebug() << label << this->id() << m_coneEntity->id() << m_cylinderEntity->id();
 }
 
 

@@ -14,8 +14,12 @@ class ArrowTranslationHandle : public Handle {
     Q_OBJECT
 
 public:
-    ArrowTranslationHandle(Qt3DCore::QNode *parent, AxisConstraint constraint, const QVector3D &position,
-                           const QString &label, const QColor &color);
+    ArrowTranslationHandle(Qt3DCore::QNode *parent,
+                           AxisConstraint constraint,
+                           const QVector3D &position,
+                           const QString &label,
+                           const QColor &color,
+                           int pickingPriority);
 
 public Q_SLOTS:
     void setLabel(const QString &label);

@@ -30,12 +30,17 @@ public:
     Q_OBJECT
 
 public:
-    Handle(Qt3DCore::QNode *parent, AxisConstraint constraint, const QVector3D &position, const QColor &color);
+    Handle(Qt3DCore::QNode *parent,
+           AxisConstraint constraint,
+           const QVector3D &position,
+           const QColor &color,
+           int pickingPriority);
     Qt3DCore::QTransform *transform() const;
     AxisConstraint axisConstraint();
 
 public Q_SLOTS:
     void setCamera(Qt3DRender::QCamera *camera);
+    void setPickingPriority(int priority);
     void setColor(const QColor &color);
     void setHighlightColor(const QColor &color);
     void setHighlightOnHover(bool highlightOnHover);
@@ -47,7 +52,7 @@ Q_SIGNALS:
     void pressed(Qt3DRender::QPickEvent *event, AxisConstraint constraint);
 
 private Q_SLOTS:
-    void onMoved();
+    void onMoved(Qt3DRender::QPickEvent *event);
     void onExited();
     void onPressed(Qt3DRender::QPickEvent *event);
     void onReleased();

@@ -143,6 +143,8 @@ public:
     Qt3DRender::QCamera *m_camera = Q_NULLPTR;
     Qt3DRender::QViewport *m_viewport;
 
+    int m_pickingPriority = DEFAULT_PICKING_PRIORITY;
+
     // Sphere to switch modes
     float m_sphereHighlightScale = 1.4f;
     Qt3DCore::QEntity *m_sphereEntity;

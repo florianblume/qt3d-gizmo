@@ -34,10 +34,11 @@ Qt3DCore::QEntity *createScene(Qt3DExtras::Qt3DWindow *graphicsWindow) {
     Qt3DGizmo *gizmo = new Qt3DGizmo(root);
     gizmo->setWindowSize(graphicsWindow->size());
     gizmo->setCamera(graphicsWindow->camera());
-    gizmo->setScale(0.9);
+    gizmo->setScale(0.5);
     Qt3DRender::QLayer *gizmoLayer = new Qt3DRender::QLayer;
     gizmoLayer->setRecursive(true);
     gizmo->addComponent(gizmoLayer);
+    gizmo->setHideMouseWhileTransforming(false);
 
     Qt3DRender::QLayer *objectsLayer = new Qt3DRender::QLayer;
     objectsLayer->setRecursive(true);
@@ -141,7 +142,7 @@ Qt3DCore::QEntity *createScene(Qt3DExtras::Qt3DWindow *graphicsWindow) {
 
     graphicsWindow->setActiveFrameGraph(renderSurfaceSelector);
     graphicsWindow->renderSettings()->pickingSettings()->setPickMethod(Qt3DRender::QPickingSettings::TrianglePicking);
-    graphicsWindow->renderSettings()->pickingSettings()->setPickResultMode(Qt3DRender::QPickingSettings::AllPicks);
+    graphicsWindow->renderSettings()->pickingSettings()->setPickResultMode(Qt3DRender::QPickingSettings::NearestPriorityPick);
     graphicsWindow->renderSettings()->setRenderPolicy(Qt3DRender::QRenderSettings::Always);
     graphicsWindow->camera()->setNearPlane(0.01f);
 
@@ -161,8 +162,8 @@ int main(int argc, char *argv[]) {
     QApplication a(argc, argv);
 
     Qt3DExtras::Qt3DWindow *graphicsWindow = new Qt3DExtras::Qt3DWindow();
-    graphicsWindow->camera()->setPosition(QVector3D(1.7, 3, 4));
-    graphicsWindow->camera()->setViewCenter({-0.4, 1, 0});
+    graphicsWindow->camera()->setPosition(QVector3D(8, 4, 4));
+    graphicsWindow->camera()->setViewCenter({0.5, 1, 0});
     Qt3DCore::QEntity *root = createScene(graphicsWindow);
     graphicsWindow->setRootEntity(root);
     graphicsWindow->show();

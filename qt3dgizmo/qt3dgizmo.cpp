@@ -182,10 +182,12 @@ void Qt3DGizmoPrivate::update(int x, int y) {
 }
 
 void Qt3DGizmoPrivate::removeHighlightsFromHanldes() {
-    for (Handle *handle : m_translationHandles) {
+    for (int i = 0; i < m_translationHandles.size(); i++) {
+        Handle* handle = m_translationHandles[i];
         handle->setIsDragged(false);
     }
-    for (Handle *handle : m_rotationHandles) {
+    for (int i = 0; i < m_rotationHandles.size(); i++) {
+        Handle* handle = m_rotationHandles[i];
         handle->setIsDragged(false);
     }
 }
@@ -255,6 +257,7 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     d->m_sphereObjectPicker = new Qt3DRender::QObjectPicker;
     d->m_sphereObjectPicker->setDragEnabled(true);
     d->m_sphereObjectPicker->setHoverEnabled(true);
+    d->m_sphereObjectPicker->setPriority(DEFAULT_PICKING_PRIORITY);
 
     // TODO move to own methods instead of lambdas
     connect(d->m_sphereObjectPicker, &Qt3DRender::QObjectPicker::clicked,
@@ -285,34 +288,36 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     QColor red = QColor(220, 50, 100);
     QColor green = QColor(50, 220, 100);
     QColor blue = QColor(50, 100, 220);
+    QColor purple = QColor(210, 90, 180);
+    QColor teal = QColor(80, 220, 170);
     QColor yellow = QColor(220, 220, 80);
 
-    d->m_translationHandleX = new ArrowTranslationHandle(this, Handle::XTrans, {0, 0, 0}, "x", blue);
+    d->m_translationHandleX = new ArrowTranslationHandle(this, Handle::XTrans, {0, 0, 0}, "x", blue, DEFAULT_PICKING_PRIORITY);
     d->m_translationHandleX->transform()->setRotationZ(-90);
     connect(d->m_translationHandleX, &Handle::pressed,
             d, &Qt3DGizmoPrivate::initialize);
 
-    d->m_translationHandleY = new ArrowTranslationHandle(this, Handle::YTrans, {0, 0, 0}, "y", green);
+    d->m_translationHandleY = new ArrowTranslationHandle(this, Handle::YTrans, {0, 0, 0}, "y", green, DEFAULT_PICKING_PRIORITY);
     d->m_translationHandles.append(d->m_translationHandleY);
     connect(d->m_translationHandleY, &Handle::pressed,
             d, &Qt3DGizmoPrivate::initialize);
 
-    d->m_translationHandleZ = new ArrowTranslationHandle(this, Handle::ZTrans, {0, 0, 0}, "z", red);
+    d->m_translationHandleZ = new ArrowTranslationHandle(this, Handle::ZTrans, {0, 0, 0}, "z", red, DEFAULT_PICKING_PRIORITY);
     d->m_translationHandleZ->transform()->setRotationX(90);
     connect(d->m_translationHandleZ, &Handle::pressed,
             d, &Qt3DGizmoPrivate::initialize);
 
-    d->m_translationHandleXY = new PlaneTranslationHandle(this, Handle::XYTrans, {0.3f, 0.3f, 0}, yellow);
+    d->m_translationHandleXY = new PlaneTranslationHandle(this, Handle::XYTrans, {0.2f, 0.2f, 0}, teal, DEFAULT_PICKING_PRIORITY);
     d->m_translationHandleXY->transform()->setRotationX(90);
     connect(d->m_translationHandleXY, &Handle::pressed,
             d, &Qt3DGizmoPrivate::initialize);
 
-    d->m_translationHandleYZ = new PlaneTranslationHandle(this, Handle::YZTrans, {0, 0.3f, 0.3f}, yellow);
+    d->m_translationHandleYZ = new PlaneTranslationHandle(this, Handle::YZTrans, {0, 0.2f, 0.2f}, yellow, DEFAULT_PICKING_PRIORITY);
     d->m_translationHandleYZ->transform()->setRotationZ(90);
     connect(d->m_translationHandleYZ, &Handle::pressed,
             d, &Qt3DGizmoPrivate::initialize);
 
-    d->m_translationHandleXZ = new PlaneTranslationHandle(this, Handle::XZTrans, {0.3f, 0, 0.3f}, yellow);
+    d->m_translationHandleXZ = new PlaneTranslationHandle(this, Handle::XZTrans, {0.2f, 0, 0.2f}, purple, DEFAULT_PICKING_PRIORITY);
     connect(d->m_translationHandleXZ, &Handle::pressed,
             d, &Qt3DGizmoPrivate::initialize);
 
@@ -323,15 +328,15 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
                                     d->m_translationHandleYZ,
                                     d->m_translationHandleXZ});
 
-    d->m_rotationHandleX = new RotationHandle(this, Handle::XTrans, QVector3D(0, 0, 0), blue);
+    d->m_rotationHandleX = new RotationHandle(this, Handle::XTrans, QVector3D(0, 0, 0), blue, DEFAULT_PICKING_PRIORITY);
     d->m_rotationHandleX->transform()->setRotationY(90);
     connect(d->m_rotationHandleX, &Handle::pressed,
             d, &Qt3DGizmoPrivate::initialize);
-    d->m_rotationHandleY = new RotationHandle(this, Handle::YTrans, QVector3D(0, 0, 0), green);
+    d->m_rotationHandleY = new RotationHandle(this, Handle::YTrans, QVector3D(0, 0, 0), green, DEFAULT_PICKING_PRIORITY);
     d->m_rotationHandleY->transform()->setRotationX(90);
     connect(d->m_rotationHandleY, &Handle::pressed,
             d, &Qt3DGizmoPrivate::initialize);
-    d->m_rotationHandleZ = new RotationHandle(this, Handle::ZTrans, QVector3D(0, 0, 0), red);
+    d->m_rotationHandleZ = new RotationHandle(this, Handle::ZTrans, QVector3D(0, 0, 0), red, DEFAULT_PICKING_PRIORITY);
     connect(d->m_rotationHandleZ, &Handle::pressed,
             d, &Qt3DGizmoPrivate::initialize);
 
@@ -401,6 +406,11 @@ bool Qt3DGizmo::flatAppearance() const {
     return d->m_flatAppearance;
 }
 
+int Qt3DGizmo::pickingPriority() const {
+    Q_D(const Qt3DGizmo);
+    return d->m_pickingPriority;
+}
+
 void Qt3DGizmo::setMode(Mode mode) {
     // Gets called externally or by clicking the sphere
     Q_D(Qt3DGizmo);
@@ -462,6 +472,18 @@ void Qt3DGizmo::setCamera(Qt3DRender::QCamera *camera) {
                     d, &Qt3DGizmoPrivate::adjustScaleToCameraDistance);
     d->adjustScaleToCameraDistance();
     Q_EMIT cameraChanged(camera);
+}
+
+void Qt3DGizmo::setPickingPriority(int priority) {
+    Q_D(Qt3DGizmo);
+    for (int i = 0; i < d->m_rotationHandles.size(); i++) {
+        d->m_rotationHandles[i]->setPickingPriority(priority);
+    }
+    for (int i = 0; i < d->m_rotationHandles.size(); i++) {
+        d->m_rotationHandles[i]->setPickingPriority(priority);
+    }
+    d->m_sphereObjectPicker->setPriority(priority);
+    d->m_pickingPriority = priority;
 }
 
 void Qt3DGizmo::setScale(float scale) {

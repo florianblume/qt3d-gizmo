@@ -13,7 +13,11 @@ class RotationHandle : public Handle {
     Q_OBJECT
 
 public:
-    RotationHandle(Qt3DCore::QNode *parent, AxisConstraint constraint, const QVector3D &position, const QColor &color);
+    RotationHandle(Qt3DCore::QNode *parent,
+                   AxisConstraint constraint,
+                   const QVector3D &position,
+                   const QColor &color,
+                   int pickingPriority);
 
 protected:
     void handleAppearanceChange() override;

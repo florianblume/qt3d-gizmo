@@ -11,7 +11,11 @@ class PlaneTranslationHandle : public Handle {
     Q_OBJECT
 
 public:
-    PlaneTranslationHandle(Qt3DCore::QNode *parent, AxisConstraint constraint, const QVector3D &position, const QColor &color);
+    PlaneTranslationHandle(Qt3DCore::QNode *parent,
+                           AxisConstraint constraint,
+                           const QVector3D &position,
+                           const QColor &color,
+                           int pickingPriority);
 
 protected:
     void handleAppearanceChange() override;

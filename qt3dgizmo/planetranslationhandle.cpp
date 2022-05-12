@@ -1,8 +1,11 @@
 #include "planetranslationhandle.h"
 
-PlaneTranslationHandle::PlaneTranslationHandle(Qt3DCore::QNode *parent, AxisConstraint constraint,
-                                               const QVector3D &position, const QColor &color)
-    : Handle(parent, constraint, position, color) {
+PlaneTranslationHandle::PlaneTranslationHandle(Qt3DCore::QNode *parent,
+                                               AxisConstraint constraint,
+                                               const QVector3D &position,
+                                               const QColor &color,
+                                               int pickingPriority)
+    : Handle(parent, constraint, position, color, pickingPriority) {
 
     m_transform->setTranslation(position);
     m_planeFrontEntity = new Qt3DCore::QEntity(this);

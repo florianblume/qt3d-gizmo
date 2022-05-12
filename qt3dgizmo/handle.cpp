@@ -3,12 +3,17 @@
 
 #include <QtMath>
 
-Handle::Handle(Qt3DCore::QNode *parent, AxisConstraint constraint, const QVector3D &position, const QColor &color)
+Handle::Handle(Qt3DCore::QNode *parent,
+               AxisConstraint constraint,
+               const QVector3D &position,
+               const QColor &color,
+               int pickingPriority)
     : Qt3DCore::QEntity(parent)
     , m_axisConstraint(constraint)
     , m_color(color)
     , m_transform(new Qt3DCore::QTransform)
     , m_picker(new Qt3DRender::QObjectPicker) {
+    m_picker->setPriority(pickingPriority);
     addComponent(m_transform);
     m_transform->setTranslation(position);
     m_picker->setDragEnabled(true);
@@ -32,11 +37,12 @@ Handle::Handle(Qt3DCore::QNode *parent, AxisConstraint constraint, const QVector
     m_highlightColor = QColor(255, 255, 180);
     m_highlightOnHover = true;
     m_isDragged = false;
-    qDebug() << "handle" << this->id();
 }
 
-void Handle::onMoved() {
-    if (m_highlightOnHover && !m_isDragged) {
+void Handle::onMoved(Qt3DRender::QPickEvent *event) {
+    // !event->buttons() checks that no buttons are pressed
+    // otherwise the handle gets highlights while rotating a different handle
+    if (m_highlightOnHover && !m_isDragged && !event->buttons()) {
         setHighlighted(true);
     }
 }
@@ -70,6 +76,10 @@ void Handle::setHighlighted(bool highlighted) {
 
 void Handle::setCamera(Qt3DRender::QCamera *camera) {
     m_camera = camera;
+}
+
+void Handle::setPickingPriority(int priority) {
+    m_picker->setPriority(priority);
 }
 
 void Handle::setColor(const QColor &color) {
