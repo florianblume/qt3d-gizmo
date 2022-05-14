@@ -1,4 +1,4 @@
-#version 130
+#version 120
 
 in vec3 vertexPosition;
 uniform mat4 modelViewProjection;
