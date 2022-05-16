@@ -172,10 +172,13 @@ public:
     RotationHandle *m_rotationHandleZ;
     QList<Handle*> m_rotationHandles;
 
-    QQuaternion m_currentRotation;
-    QQuaternion m_initRotHandleX;
-    QQuaternion m_initRotHandleY;
-    QQuaternion m_initRotHandleZ;
+    QQuaternion m_initRotationHandleX;
+    QQuaternion m_initRotationHandleY;
+    QQuaternion m_initRotationHandleZ;
+
+    QQuaternion m_defaultRotationHandleX;
+    QQuaternion m_defaultRotationHandleY;
+    QQuaternion m_defaultRotationHandleZ;
 
 Q_SIGNALS:
     void isTranslating();
