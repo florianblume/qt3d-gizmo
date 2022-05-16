@@ -71,28 +71,6 @@ Plane Qt3DGizmoPrivate::initializeTranslationPlane(const Ray &clickRay,
     return Plane(position, planeNormal);
 }
 
-Plane Qt3DGizmoPrivate::initializeRotationPlane(const QVector3D &position,
-                                                Handle::AxisConstraint translationConstraint) {
-    QVector3D normal;
-    // Rotation can only occur in these axes
-    switch (translationConstraint) {
-    case Handle::XTrans:
-        normal = QVector3D(1, 0, 0);
-        break;
-    case Handle::YTrans:
-        normal = QVector3D(0, 1, 0);
-        break;
-    case Handle::ZTrans:
-        normal = QVector3D(0, 0, 1);
-        break;
-    default:
-        // Can never occur
-        break;
-    }
-
-    return Plane(position, normal);
-}
-
 // Called by initializeTranslationPlane
 QVector3D Qt3DGizmoPrivate::computePlaneNormal(const Ray &ray, Handle::AxisConstraint axisConstraint) {
     QVector3D normal = ray.start - ray.end;
@@ -114,6 +92,30 @@ QVector3D Qt3DGizmoPrivate::computePlaneNormal(const Ray &ray, Handle::AxisConst
     return normal;
 }
 
+Plane Qt3DGizmoPrivate::initializeRotationPlane(const QVector3D &position,
+                                                Handle::AxisConstraint translationConstraint) {
+    QVector3D normal;
+    // Rotation can only occur in these axes
+    switch (translationConstraint) {
+    case Handle::XTrans:
+        normal = QVector3D(1, 0, 0);
+        break;
+    case Handle::YTrans:
+        normal = QVector3D(0, 1, 0);
+        break;
+    case Handle::ZTrans:
+        normal = QVector3D(0, 0, 1);
+        break;
+    default:
+        // Can never occur
+        break;
+    }
+
+    normal = m_delegateTransform->rotation().rotatedVector(normal);
+
+    return Plane(position, normal);
+}
+
 void Qt3DGizmoPrivate::initialize(Qt3DRender::QPickEvent *event,
                                   Handle::AxisConstraint axisConstraint) {
     // We set this here to true since this function is only called when
@@ -129,6 +131,7 @@ void Qt3DGizmoPrivate::initialize(Qt3DRender::QPickEvent *event,
         m_plane = initializeTranslationPlane(m_rayFromClickPosition,
                                              event->worldIntersection(),
                                              axisConstraint);
+        Q_EMIT isTranslating();
     } else {
         m_plane = initializeRotationPlane(m_delegateTransform->translation(),
                                           axisConstraint);
@@ -139,6 +142,10 @@ void Qt3DGizmoPrivate::initialize(Qt3DRender::QPickEvent *event,
         // to obtain a vector from origin
         m_lastPositionOnRotationHandle = (intersection.second - m_plane.position).normalized();
         m_initialOrientation = m_delegateTransform->rotation();
+        m_initRotHandleX = m_rotationHandleX->transform()->rotation();
+        m_initRotHandleY = m_rotationHandleY->transform()->rotation();
+        m_initRotHandleZ = m_rotationHandleZ->transform()->rotation();
+        Q_EMIT isRotating();
     }
 }
 
@@ -178,6 +185,9 @@ void Qt3DGizmoPrivate::update(int x, int y) {
         QQuaternion rotation = QQuaternion::rotationTo(m_lastPositionOnRotationHandle,
                                                        point);
         m_delegateTransform->setRotation(rotation * m_initialOrientation);
+        m_rotationHandleX->transform()->setRotation(rotation * m_initRotHandleX);
+        m_rotationHandleY->transform()->setRotation(rotation * m_initRotHandleY);
+        m_rotationHandleZ->transform()->setRotation(rotation * m_initRotHandleZ);
     }
 }
 
@@ -193,12 +203,23 @@ void Qt3DGizmoPrivate::removeHighlightsFromHanldes() {
 }
 
 void Qt3DGizmoPrivate::adjustScaleToCameraDistance() {
-    if (m_scaleToCameraDistance && m_camera) {
-        // TODO Not completely working yet
-        float reciprScaleOnscreen = 0.05;
-        float w = ((m_camera->projectionMatrix() * m_camera->viewMatrix() * m_ownTransform->matrix()) * QVector4D(0, 0, 0, 1)).w();
+    if (m_scaleToCameraDistance && m_delegateTransform && m_camera) {
+        /*
+        float depth = QVector3D::dotProduct(m_delegateTransform->translation() - m_camera->position(),
+                                            m_camera->viewVector());
+        qDebug() << depth;
+        m_actualScale = (1.0 / depth) * 100000 * m_scale;
+        m_ownTransform->setScale(m_actualScale);
+        */
+        float reciprScaleOnscreen = (2.0 * m_scale / m_windowSize.width());
+
+        float w = (m_camera->projectionMatrix() *
+                   m_camera->viewMatrix() *
+                   m_delegateTransform->matrix() *
+                   QVector4D(0, 0, 0, 1)).w();
         w *= reciprScaleOnscreen;
-        m_ownTransform->setScale(m_scale + w);
+
+        m_ownTransform->setScale(w);
     }
 }
 
@@ -216,7 +237,11 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
     d->m_mouseHandler->setSourceDevice(d->m_mouseDevice);
     addComponent(d->m_mouseHandler);
     connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::released,
-            this, [d](){
+            this, [d, this](){
+        if (d->m_isTransforming) {
+            d->m_isTransforming = false;
+            Q_EMIT transformingEnded();
+        }
         d->m_mouseDownOnHandle = false;
         d->removeHighlightsFromHanldes();
         d->m_spherePhongMaterial->setAmbient(QColor(50, 50, 50, 50));
@@ -232,6 +257,7 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
                 d->m_currentlyHidingMouse = true;
             }
             d->update(e->x(), e->y());
+            d->m_isTransforming = true;
         }
     });
     connect(d->m_mouseHandler, &Qt3DInput::QMouseHandler::exited,
@@ -240,6 +266,10 @@ Qt3DGizmo::Qt3DGizmo(Qt3DCore::QNode *parent)
         QApplication::restoreOverrideCursor();
         d->m_currentlyHidingMouse = false;
     });
+    connect(d, &Qt3DGizmoPrivate::isTranslating,
+            this, &Qt3DGizmo::isTranslating);
+    connect(d, &Qt3DGizmoPrivate::isRotating,
+            this, &Qt3DGizmo::isRotating);
 
     d->m_ownTransform = new Qt3DCore::QTransform;
     addComponent(d->m_ownTransform);
@@ -372,7 +402,7 @@ Qt3DRender::QCamera *Qt3DGizmo::camera() const {
 }
 
 void Qt3DGizmo::setEnabled(bool enabled) {
-    Q_D(const Qt3DGizmo);
+    Q_D(Qt3DGizmo);
     if (d->m_currentMode == Translation) {
         for (int i = 0; i < d->m_translationHandles.size(); i++) {
             d->m_translationHandles[i]->setEnabled(enabled);
@@ -384,6 +414,7 @@ void Qt3DGizmo::setEnabled(bool enabled) {
     }
     d->m_spherePhongMaterial->setEnabled(enabled);
     d->m_sphereFlatMaterial->setEnabled(enabled);
+    d->m_enabled = enabled;
 }
 
 float Qt3DGizmo::scale() const {
@@ -411,6 +442,11 @@ int Qt3DGizmo::pickingPriority() const {
     return d->m_pickingPriority;
 }
 
+bool Qt3DGizmo::isEnabled() const {
+    Q_D(const Qt3DGizmo);
+    return d->m_enabled;
+}
+
 void Qt3DGizmo::setMode(Mode mode) {
     // Gets called externally or by clicking the sphere
     Q_D(Qt3DGizmo);
@@ -428,6 +464,7 @@ void Qt3DGizmo::setMode(Mode mode) {
 void Qt3DGizmo::setWindowSize(const QSize &size) {
     Q_D(Qt3DGizmo);
     d->m_windowSize = size;
+    d->adjustScaleToCameraDistance();
     Q_EMIT windowSizeChanged(d->m_windowSize);
 }
 
@@ -448,6 +485,11 @@ void Qt3DGizmo::setDelegateTransform(Qt3DCore::QTransform *transform) {
     setEnabled(true);
     d->m_delegateTransform = transform;
     d->m_ownTransform->setTranslation(transform->translation());
+    for (Handle *handle: d->m_rotationHandles) {
+        handle->transform()->setRotation(
+            d->m_delegateTransform->rotation() * handle->transform()->rotation()
+        );
+    }
     disconnect(d->m_delegateTransformTranslationChangedConnection);
     disconnect(d->m_delegateTransformAdjustScaleConnection);
     d->m_delegateTransformTranslationChangedConnection = connect(

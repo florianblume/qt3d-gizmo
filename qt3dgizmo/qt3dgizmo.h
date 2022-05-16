@@ -77,6 +77,7 @@ public:
     bool hideMouseWhileTransforming() const;
     bool flatAppearance() const;
     int pickingPriority() const;
+    bool isEnabled() const;
 
 public Q_SLOTS:
     void setMode(Qt3DGizmo::Mode mode);
@@ -93,7 +94,7 @@ public Q_SLOTS:
     void setFlatAppearance(bool flatAppearance);
 
 Q_SIGNALS:
-    void modeChanged(Mode mode);
+    void modeChanged(Qt3DGizmo::Mode mode);
     void windowSizeChanged(const QSize &size);
     void delegateTransformChanged(Qt3DCore::QTransform *transform);
     void cameraChanged(Qt3DRender::QCamera *camera);
@@ -103,6 +104,11 @@ Q_SIGNALS:
     void scaleToCameraDistanceChanged(bool scaleToCameraDistance);
     void hideMouseWhileTransformingChanged(bool hideMouseWhileTransforming);
     void flatAppearanceChanged(bool flatAppearance);
+
+    // Emitted when transforming starts
+    void isTranslating();
+    void isRotating();
+    void transformingEnded();
 
 protected:
     Qt3DGizmoPrivate *d_ptr;

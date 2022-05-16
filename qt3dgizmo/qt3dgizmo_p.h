@@ -85,6 +85,8 @@ public:
 
 class Qt3DGizmoPrivate : public QObject {
 
+Q_OBJECT
+
 public:
     Qt3DGizmoPrivate();
 
@@ -94,8 +96,8 @@ public:
     Ray generate3DRayFromScreenToInfinity(int x, int y);
     static Plane initializeTranslationPlane(const Ray &clickRay, const QVector3D &position,
                                             Handle::AxisConstraint translationConstraint);
-    static Plane initializeRotationPlane(const QVector3D &position,
-                                         Handle::AxisConstraint translationConstraint);
+    Plane initializeRotationPlane(const QVector3D &position,
+                                  Handle::AxisConstraint translationConstraint);
     static QVector3D computePlaneNormal(const Ray &ray, Handle::AxisConstraint translationConstraint);
     QVector3D applyTranslationConstraint(const QVector3D &position, const QVector3D &intersectionPosition,
                                          Handle::AxisConstraint translationConstraint);
@@ -105,7 +107,9 @@ public:
     void adjustScaleToCameraDistance();
 
     // Configurable properties
+    bool m_enabled = true;
     float m_scale = 1.f;
+    float m_actualScale = 1.f;
     bool m_scaleToCameraDistance = true;
     bool m_hideMouseWhileTransforming = true;
     bool m_currentlyHidingMouse = false;
@@ -117,7 +121,7 @@ public:
 
     Handle::AxisConstraint m_axisConstraint;
 
-
+    bool m_isTransforming = false;
     bool m_mouseDownOnHandle = false;
 
     QColor m_handleHighlightColor = QColor(255, 255, 180);
@@ -134,7 +138,7 @@ public:
     Qt3DInput::QMouseDevice *m_mouseDevice;
     Qt3DInput::QMouseHandler *m_mouseHandler;
 
-    Qt3DCore::QTransform *m_delegateTransform;
+    Qt3DCore::QTransform *m_delegateTransform = Q_NULLPTR;
     Qt3DCore::QTransform *m_ownTransform;
     QMetaObject::Connection m_delegateTransformTranslationChangedConnection;
     QMetaObject::Connection m_delegateTransformAdjustScaleConnection;
@@ -167,6 +171,15 @@ public:
     RotationHandle *m_rotationHandleY;
     RotationHandle *m_rotationHandleZ;
     QList<Handle*> m_rotationHandles;
+
+    QQuaternion m_currentRotation;
+    QQuaternion m_initRotHandleX;
+    QQuaternion m_initRotHandleY;
+    QQuaternion m_initRotHandleZ;
+
+Q_SIGNALS:
+    void isTranslating();
+    void isRotating();
 
 public Q_SLOTS:
     void onMouseRelease();

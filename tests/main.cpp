@@ -34,7 +34,7 @@ Qt3DCore::QEntity *createScene(Qt3DExtras::Qt3DWindow *graphicsWindow) {
     Qt3DGizmo *gizmo = new Qt3DGizmo(root);
     gizmo->setWindowSize(graphicsWindow->size());
     gizmo->setCamera(graphicsWindow->camera());
-    gizmo->setScale(0.5);
+    gizmo->setScale(50);
     Qt3DRender::QLayer *gizmoLayer = new Qt3DRender::QLayer;
     gizmoLayer->setRecursive(true);
     gizmo->addComponent(gizmoLayer);
