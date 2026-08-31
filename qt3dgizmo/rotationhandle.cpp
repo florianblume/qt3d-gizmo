@@ -14,6 +14,15 @@ RotationHandle::RotationHandle(Qt3DCore::QNode *parent,
     m_torusMesh->setSlices(100);
     m_torusEntity->addComponent(m_torusMesh);
     m_torusEntity->addComponent(m_flatMaterial);
+
+    m_torusHighlightEntity = new Qt3DCore::QEntity(this);
+    m_torusHighlightMesh = new Qt3DExtras::QTorusMesh;
+    m_torusHighlightMesh->setRadius(1.01f);
+    m_torusHighlightMesh->setMinorRadius(0.015f);
+    m_torusHighlightMesh->setRings(100);
+    m_torusHighlightMesh->setSlices(100);
+    m_torusHighlightEntity->addComponent(m_torusHighlightMesh);
+    addHighlightEntity(m_torusHighlightEntity);
 }
 
 void RotationHandle::handleAppearanceChange() {

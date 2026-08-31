@@ -40,9 +40,17 @@ private:
     Qt3DCore::QTransform *m_cylinderTransform;
     Qt3DExtras::QCylinderMesh *m_cylinderMesh;
 
+    Qt3DCore::QEntity *m_cylinderHighlightEntity;
+    Qt3DCore::QTransform *m_cylinderHighlightTransform;
+    Qt3DExtras::QCylinderMesh *m_cylinderHighlightMesh;
+
     Qt3DCore::QEntity *m_coneEntity;
     Qt3DCore::QTransform *m_coneTransform;
     Qt3DExtras::QConeMesh *m_coneMesh;
+
+    Qt3DCore::QEntity *m_coneHighlightEntity;
+    Qt3DCore::QTransform *m_coneHighlightTransform;
+    Qt3DExtras::QConeMesh *m_coneHighlightMesh;
 
     // Need to store since we have to set the color on it
     // whenever it changes after creating the handle
