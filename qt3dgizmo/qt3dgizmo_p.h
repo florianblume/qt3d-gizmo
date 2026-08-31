@@ -124,7 +124,7 @@ public:
     bool m_isTransforming = false;
     bool m_mouseDownOnHandle = false;
 
-    QColor m_handleHighlightColor = QColor(255, 255, 180);
+    QColor m_handleHighlightColor = QColor(255, 255, 0);
 
     Ray m_rayFromClickPosition;
     Plane m_plane;

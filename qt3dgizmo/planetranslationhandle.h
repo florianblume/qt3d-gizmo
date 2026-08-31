@@ -23,6 +23,9 @@ protected:
 private:
     Qt3DCore::QEntity *m_planeFrontEntity;
     Qt3DExtras::QPlaneMesh *m_planeMeshFront;
+    Qt3DCore::QEntity *m_planeHighlightEntity;
+    Qt3DCore::QTransform *m_planeHighlightTransform;
+    Qt3DExtras::QPlaneMesh *m_planeHighlightMesh;
     Qt3DCore::QEntity *m_planeBackEntity;
     Qt3DCore::QTransform *m_planeBackTransform;
     Qt3DExtras::QPlaneMesh *m_planeMeshBack;

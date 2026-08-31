@@ -34,7 +34,9 @@ Handle::Handle(Qt3DCore::QNode *parent,
     m_flatMaterial = new FlatMaterial();
     m_flatMaterial->setColor(color);
 
-    m_highlightColor = QColor(255, 255, 180);
+    m_highlightColor = QColor(255, 255, 0);
+    m_highlightMaterial = new FlatMaterial();
+    m_highlightMaterial->setColor(m_highlightColor);
     m_highlightOnHover = true;
     m_isDragged = false;
 }
@@ -65,12 +67,9 @@ void Handle::onReleased() {
 }
 
 void Handle::setHighlighted(bool highlighted) {
-    if (highlighted) {
-        m_phongMaterial->setAmbient(m_highlightColor);
-        m_flatMaterial->setColor(m_highlightColor);
-    } else {
-        m_phongMaterial->setAmbient(m_color);
-        m_flatMaterial->setColor(m_color);
+    m_isHighlighted = highlighted;
+    for (Qt3DCore::QEntity *highlightEntity : m_highlightEntities) {
+        highlightEntity->setEnabled(highlighted);
     }
 }
 
@@ -82,12 +81,19 @@ void Handle::setPickingPriority(int priority) {
     m_picker->setPriority(priority);
 }
 
+void Handle::addHighlightEntity(Qt3DCore::QEntity *entity) {
+    entity->addComponent(m_highlightMaterial);
+    entity->setEnabled(false);
+    m_highlightEntities.append(entity);
+}
+
 void Handle::setColor(const QColor &color) {
     m_color = color;
 }
 
 void Handle::setHighlightColor(const QColor &color) {
     m_highlightColor = color;
+    m_highlightMaterial->setColor(color);
 }
 
 void Handle::setHighlightOnHover(bool highlightOnHover) {
@@ -112,6 +118,10 @@ void Handle::setEnabled(bool enabled) {
     m_picker->setEnabled(enabled);
     m_flatMaterial->setEnabled(enabled);
     m_phongMaterial->setEnabled(enabled);
+    m_highlightMaterial->setEnabled(enabled);
+    for (Qt3DCore::QEntity *highlightEntity : m_highlightEntities) {
+        highlightEntity->setEnabled(enabled && m_isHighlighted);
+    }
 }
 
 Qt3DCore::QTransform *Handle::transform() const {

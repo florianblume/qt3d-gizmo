@@ -25,6 +25,8 @@ protected:
 private:
     Qt3DCore::QEntity *m_torusEntity;
     Qt3DExtras::QTorusMesh *m_torusMesh;
+    Qt3DCore::QEntity *m_torusHighlightEntity;
+    Qt3DExtras::QTorusMesh *m_torusHighlightMesh;
 };
 
 #endif // ROTATIONHANDLE_H

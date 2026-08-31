@@ -25,6 +25,17 @@ ArrowTranslationHandle::ArrowTranslationHandle(Qt3DCore::QNode *parent,
     m_cylinderEntity->addComponent(m_flatMaterial);
     m_cylinderEntity->addComponent(m_cylinderTransform);
 
+    m_cylinderHighlightEntity = new Qt3DCore::QEntity(this);
+    m_cylinderHighlightMesh = new Qt3DExtras::QCylinderMesh();
+    m_cylinderHighlightMesh->setRadius(0.012f);
+    m_cylinderHighlightMesh->setLength(0.52f);
+    m_cylinderHighlightMesh->setRings(2);
+    m_cylinderHighlightTransform = new Qt3DCore::QTransform;
+    m_cylinderHighlightTransform->setTranslation(QVector3D(0.0f, 0.3f, 0.0f));
+    m_cylinderHighlightEntity->addComponent(m_cylinderHighlightMesh);
+    m_cylinderHighlightEntity->addComponent(m_cylinderHighlightTransform);
+    addHighlightEntity(m_cylinderHighlightEntity);
+
     m_coneEntity = new Qt3DCore::QEntity(this);
     m_coneMesh = new Qt3DExtras::QConeMesh();
     m_coneMesh->setRings(2);
@@ -37,6 +48,19 @@ ArrowTranslationHandle::ArrowTranslationHandle(Qt3DCore::QNode *parent,
     m_coneEntity->addComponent(m_coneMesh);
     m_coneEntity->addComponent(m_flatMaterial);
     m_coneEntity->addComponent(m_coneTransform);
+
+    m_coneHighlightEntity = new Qt3DCore::QEntity(this);
+    m_coneHighlightMesh = new Qt3DExtras::QConeMesh();
+    m_coneHighlightMesh->setRings(2);
+    m_coneHighlightMesh->setTopRadius(0);
+    m_coneHighlightMesh->setBottomRadius(0.055f);
+    m_coneHighlightMesh->setHasBottomEndcap(true);
+    m_coneHighlightMesh->setLength(0.22f);
+    m_coneHighlightTransform = new Qt3DCore::QTransform;
+    m_coneHighlightTransform->setTranslation(QVector3D(0.f, 0.6f, 0.f));
+    m_coneHighlightEntity->addComponent(m_coneHighlightMesh);
+    m_coneHighlightEntity->addComponent(m_coneHighlightTransform);
+    addHighlightEntity(m_coneHighlightEntity);
 
     m_labelEntity = new Qt3DExtras::QText2DEntity(m_coneEntity);
     m_labelEntity->setText(label);

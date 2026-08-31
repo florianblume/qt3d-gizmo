@@ -5,6 +5,7 @@
 
 #include <QObject>
 #include <QColor>
+#include <QList>
 
 #include <Qt3DCore/QEntity>
 #include <Qt3DCore/QTransform>
@@ -59,6 +60,7 @@ private Q_SLOTS:
 protected:
     void setHighlighted(bool highlighted);
     virtual void handleAppearanceChange() = 0;
+    void addHighlightEntity(Qt3DCore::QEntity *entity);
 
 protected:
     AxisConstraint m_axisConstraint;
@@ -71,6 +73,9 @@ protected:
     Qt3DRender::QObjectPicker *m_picker;
     FlatMaterial *m_flatMaterial;
     Qt3DExtras::QPhongMaterial *m_phongMaterial;
+    FlatMaterial *m_highlightMaterial;
+    QList<Qt3DCore::QEntity *> m_highlightEntities;
+    bool m_isHighlighted = false;
     bool m_flatAppearance = true;
 };
 
